@@ -1,16 +1,16 @@
 {
-  "name": "Nesru Michael Web App",
-  "short_name": "NesruApp",
-  "description": "Web App Guutuu (PWA) - Nesru Michael (nesrumichael@gmail.com | +251923502787)",
+  "name": "Nesru Michael Social & Chat",
+  "short_name": "Nesru App",
+  "description": "Shared Feed, Like, Comment, Share, Follow, Add Friend fi Live Chat app.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "icons/icon.svg",
-      "sizes": "192x192 512x512",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }

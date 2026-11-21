@@ -4,244 +4,204 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0f172a" />
-  <meta name="description" content="Nesru Michael - Web App Guutuu (PWA) tajaajila digital, galmee fayyadamaa, dashboard fi quunnamtii." />
-  <title>Nesru Michael | Web App</title>
+  <title>Nesru Michael • Social & Live Chat</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
-  <link rel="apple-touch-icon" href="icons/icon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <!-- Top Header -->
   <header class="app-header">
     <div class="brand">
-      <div class="brand-logo">NM</div>
+      <div class="logo-badge">NM</div>
       <div>
         <h1>Nesru Michael</h1>
-        <span class="badge-online" id="connection-status">Online • PWA Ready</span>
+        <p id="header-status" class="status-sub">
+          <span class="dot-online"></span> Online • Social & Chat
+        </p>
       </div>
     </div>
-    <button id="install-btn" class="btn-install hidden" title="App Install Godhi">
-      <span>Install App</span>
-    </button>
+    <span id="cloud-badge" class="badge badge-local">Local Mode</span>
   </header>
 
-  <!-- Main Content Area -->
-  <main class="app-container">
-
-    <!-- PAGE 1: AUTH (LOGIN / REGISTER) -->
-    <section id="page-auth" class="page active">
-      <div class="hero-card">
-        <span class="pill">Baga Nagaan Dhuftan</span>
-        <h2>Tajaajila Digital & Web App Guutuu</h2>
-        <p>Galmaa'uun dashboard kee seeni, barreeffama maxxansi, fi tajaajila keenya kallattiin argadhu.</p>
+  <main class="container">
+    <!-- TAB 1: SEENSA (LOGIN / REGISTER) -->
+    <section id="view-auth" class="view active">
+      <div class="card hero-card">
+        <h2>Baga Nagaan Dhuftan!</h2>
+        <p class="muted">Galmaa'aa ykn seenaa — barreeffama walii argaa, Like/Comment/Share godhaa, hiriyoota horadhaa fi kallattiin chat godhaa.</p>
       </div>
 
-      <div class="card auth-card">
-        <div class="tabs">
-          <button class="tab-btn active" data-auth-tab="login">Seeni (Login)</button>
-          <button class="tab-btn" data-auth-tab="register">Galmaa'i (Register)</button>
-        </div>
-
-        <!-- Login Form -->
-        <form id="login-form" class="auth-form">
-          <div class="form-group">
-            <label for="login-email">Email</label>
-            <input type="email" id="login-email" placeholder="fakkeenya@gmail.com" required />
-          </div>
-          <div class="form-group">
-            <label for="login-password">Jecha Iccitii (Password)</label>
-            <input type="password" id="login-password" placeholder="••••••••" required />
-          </div>
-          <button type="submit" class="btn-primary btn-lg">Seeni</button>
-        </form>
-
-        <!-- Register Form -->
-        <form id="register-form" class="auth-form hidden">
-          <div class="form-group">
-            <label for="reg-name">Maqaa Guutuu</label>
-            <input type="text" id="reg-name" placeholder="Maqaa kee barreessi" required />
-          </div>
-          <div class="form-group">
-            <label for="reg-email">Email</label>
-            <input type="email" id="reg-email" placeholder="fakkeenya@gmail.com" required />
-          </div>
-          <div class="form-group">
-            <label for="reg-password">Jecha Iccitii (Password)</label>
-            <input type="password" id="reg-password" placeholder="Yoo xiqqaate qubee 6" minlength="6" required />
-          </div>
-          <button type="submit" class="btn-primary btn-lg">Akkaawuntii Uumi</button>
-        </form>
-
-        <div class="demo-box">
-          <p>Yeroodhaaf yaaluuf (Demo Mode) ykn Supabase API keetiin ni hojjeta.</p>
-          <button type="button" id="demo-login-btn" class="btn-secondary">Demo Akkaawuntiin Seeni</button>
-        </div>
-      </div>
-
-      <!-- Developer & Service Info Card -->
-      <div class="card contact-banner">
-        <h3>Tajaajila & Quunnamtii</h3>
-        <p><strong>Abbaa Web App:</strong> Nesru Michael</p>
-        <div class="contact-links">
-          <a href="mailto:nesrumichael@gmail.com" class="contact-chip">✉️ nesrumichael@gmail.com</a>
-          <a href="tel:+251923502787" class="contact-chip">📞 +251 923 502 787</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGE 2: DASHBOARD / MAIN PAGE -->
-    <section id="page-dashboard" class="page">
-      <div class="welcome-row">
-        <div>
-          <p class="muted-label">Akkam jirta,</p>
-          <h2 id="dash-user-name">Fayyadamaa</h2>
-        </div>
-        <span class="role-badge" id="storage-mode-badge">Local / Cloud Ready</span>
-      </div>
-
-      <!-- Stats Grid -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-num" id="stat-posts">0</span>
-          <span class="stat-label">Barreeffama</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num">3</span>
-          <span class="stat-label">Tajaajila</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num">PWA</span>
-          <span class="stat-label">Installable</span>
-        </div>
-      </div>
-
-      <!-- Services Showcase -->
-      <div class="section-title">
-        <h3>Tajaajilawwan Keenya</h3>
-      </div>
-      <div class="services-grid">
-        <div class="service-card">
-          <div class="service-icon">🌐</div>
-          <h4>Web & PWA Design</h4>
-          <p>Website fi Web App ammayyaa bilbila irratti akka appitti install ta'u.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-icon">🔐</div>
-          <h4>Database & Auth</h4>
-          <p>Galmee fayyadamaa, kuusaa odeeffannoo fi suuraa cloud irratti.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-icon">🚀</div>
-          <h4>Cloud Hosting</h4>
-          <p>Vercel, Netlify fi GitHub irratti saffisa olaanaan maxxansuu.</p>
-        </div>
-      </div>
-
-      <!-- Post / Note Creation Form -->
       <div class="card">
-        <h3>Barreeffama / Ergaa Haaraa Maxxansi</h3>
-        <form id="post-form">
-          <div class="form-group">
-            <input type="text" id="post-title" placeholder="Mata-duree barreessi..." required />
+        <div class="tabs-toggle">
+          <button id="btn-show-login" class="toggle-btn active" onclick="switchAuthMode('login')">Seeni (Login)</button>
+          <button id="btn-show-register" class="toggle-btn" onclick="switchAuthMode('register')">Galmaa'i (Register)</button>
+        </div>
+
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+          <div id="field-name" class="form-group hidden">
+            <label for="auth-name">Maqaa Guutuu</label>
+            <input type="text" id="auth-name" placeholder="Fkn: Nesru Michael" />
           </div>
           <div class="form-group">
-            <textarea id="post-body" rows="3" placeholder="Yaada, galmee ykn ergaa kee asitti barreessi..." required></textarea>
+            <label for="auth-email">Email</label>
+            <input type="email" id="auth-email" placeholder="maqaa@gmail.com" required />
           </div>
           <div class="form-group">
-            <label for="post-image" class="file-label">📷 Suuraa Dabali (Filannoo)</label>
-            <input type="file" id="post-image" accept="image/*" />
+            <label for="auth-password">Jecha Iccitii (Password - Qubee 6+)</label>
+            <input type="password" id="auth-password" placeholder="••••••••" minlength="6" required />
           </div>
-          <button type="submit" class="btn-primary">Maxxansi</button>
+          <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-block">Seeni</button>
         </form>
       </div>
 
-      <!-- Feed List -->
-      <div class="section-title">
-        <h3>Kuusaa Barreeffamaa (Feed)</h3>
+      <div class="card info-card">
+        <h3>Odeeffannoo Quunnamtii</h3>
+        <p><strong>Maqaa:</strong> Nesru Michael</p>
+        <p><strong>Email:</strong> nesrumichael@gmail.com</p>
+        <p><strong>Bilbila:</strong> +251923502787</p>
       </div>
-      <div id="posts-list" class="posts-list"></div>
     </section>
 
-    <!-- PAGE 3: PROFILE & SETTINGS -->
-    <section id="page-profile" class="page">
-      <div class="card profile-header-card">
-        <div class="avatar-circle" id="profile-avatar">NM</div>
+    <!-- TAB 2: SHARED FEED (POSTS, LIKE, COMMENT, SHARE) -->
+    <section id="view-feed" class="view">
+      <!-- Create Post Box -->
+      <div class="card">
+        <div class="section-head">
+          <h3>Barreeffama Haaraa Maxxansi</h3>
+          <span id="feed-user-tag" class="pill">Keessummaa</span>
+        </div>
+        <form id="post-form" onsubmit="handleCreatePost(event)">
+          <div class="form-group">
+            <input type="text" id="post-title" placeholder="Mata-duree barreeffamaa..." required />
+          </div>
+          <div class="form-group">
+            <textarea id="post-body" rows="3" placeholder="Yaada keessan hawaasaaf qoodaa..." required></textarea>
+          </div>
+          <div class="form-group">
+            <input type="url" id="post-image" placeholder="Linkii suuraa (yoo jiraate - filannoo)" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Maxxansi (Post)</button>
+        </form>
+      </div>
+
+      <!-- Feed Filter -->
+      <div class="feed-filter-bar">
+        <button class="chip active" id="filter-all" onclick="setFeedFilter('all')">Hundaa (All)</button>
+        <button class="chip" id="filter-following" onclick="setFeedFilter('following')">Kan Hordofu (Following)</button>
+      </div>
+
+      <!-- Posts Container -->
+      <div id="posts-list" class="stack"></div>
+    </section>
+
+    <!-- TAB 3: HIRIYOOTA (PEOPLE: FOLLOW & ADD FRIEND) -->
+    <section id="view-people" class="view">
+      <div class="card">
+        <h3>Fayyadamtoota & Hiriyoota</h3>
+        <p class="muted">Namoota galmaa'an hordofaa (Follow), hiriyaa godhadhaa (Add Friend), fi eenyu akka <strong>Online</strong> jiru ilaalaa.</p>
+        <div class="form-group" style="margin-top:10px; margin-bottom:0;">
+          <input type="text" id="people-search" placeholder="Maqaa ykn email barbaadi..." oninput="renderPeople()" />
+        </div>
+      </div>
+
+      <div id="friend-requests-box" class="card hidden">
+        <h4>Gaaffii Hiriyummaa Dhufe (Friend Requests)</h4>
+        <div id="friend-requests-list" class="stack"></div>
+      </div>
+
+      <div id="people-list" class="stack"></div>
+    </section>
+
+    <!-- TAB 4: LIVE CHAT (ONLINE STATUS + GROUP & DM) -->
+    <section id="view-chat" class="view">
+      <div class="card chat-shell">
+        <div class="chat-top">
+          <div>
+            <h3 id="chat-room-title">Chat Waliinii (Public Group)</h3>
+            <p id="chat-room-status" class="status-sub">
+              <span class="dot-online"></span> <span id="online-count">1</span> Online amma
+            </p>
+          </div>
+          <select id="chat-target-select" class="chat-select" onchange="switchChatTarget(this.value)">
+            <option value="">🌍 Chat Waliinii (Hundaa)</option>
+          </select>
+        </div>
+
+        <div id="chat-messages" class="chat-messages"></div>
+
+        <form id="chat-form" class="chat-input-row" onsubmit="handleSendMessage(event)">
+          <input type="text" id="chat-input" placeholder="Ergaa barreessi..." autocomplete="off" required />
+          <button type="submit" class="btn btn-primary">Ergi</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 5: PROFILE & SUPABASE SETTINGS -->
+    <section id="view-profile" class="view">
+      <div class="card profile-hero">
+        <div class="avatar-lg" id="profile-avatar">NM</div>
         <h2 id="profile-name">Nesru Michael</h2>
-        <p id="profile-email" class="muted-label">nesrumichael@gmail.com</p>
+        <p id="profile-email" class="muted">nesrumichael@gmail.com</p>
+        <div class="stats-row">
+          <div class="stat-box">
+            <strong id="stat-posts">0</strong>
+            <span>Post</span>
+          </div>
+          <div class="stat-box">
+            <strong id="stat-followers">0</strong>
+            <span>Followers</span>
+          </div>
+          <div class="stat-box">
+            <strong id="stat-friends">0</strong>
+            <span>Friends</span>
+          </div>
+        </div>
+        <button onclick="handleLogout()" class="btn btn-danger btn-block" style="margin-top:12px;">Ba'i (Logout)</button>
       </div>
 
-      <!-- Profile Update Form -->
       <div class="card">
-        <h3>Odeeffannoo Dhuunfaa Sirreessi</h3>
-        <form id="profile-form">
-          <div class="form-group">
-            <label for="edit-name">Maqaa</label>
-            <input type="text" id="edit-name" required />
-          </div>
-          <div class="form-group">
-            <label for="edit-phone">Bilbila</label>
-            <input type="tel" id="edit-phone" placeholder="+251923502787" />
-          </div>
-          <button type="submit" class="btn-primary">Ol-kaa'i (Save)</button>
-        </form>
-      </div>
-
-      <!-- Supabase Cloud Config -->
-      <div class="card">
-        <h3>Supabase Database & Storage Wal-qabsiisi</h3>
-        <p class="small-note">Project bilisaa Supabase irraa URL fi Anon Key galchuun cloud database banadhu.</p>
-        <form id="supabase-config-form">
-          <div class="form-group">
-            <label for="sb-url">Supabase Project URL</label>
-            <input type="url" id="sb-url" placeholder="https://xyzcompany.supabase.co" />
-          </div>
-          <div class="form-group">
-            <label for="sb-key">Supabase Anon Public Key</label>
-            <input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." />
-          </div>
-          <button type="submit" class="btn-secondary">Supabase Wal-qabsiisi</button>
-        </form>
-      </div>
-
-      <!-- Developer Support Card -->
-      <div class="card">
-        <h3>Deeggarsa & Quunnamtii (Support)</h3>
-        <ul class="info-list">
-          <li><strong>Maqaa:</strong> Nesru Michael</li>
-          <li><strong>Email:</strong> <a href="mailto:nesrumichael@gmail.com">nesrumichael@gmail.com</a></li>
-          <li><strong>Bilbila:</strong> <a href="tel:+251923502787">+251923502787</a></li>
-        </ul>
-        <button id="logout-btn" class="btn-danger">Ba'i (Logout)</button>
+        <h3>Qindaa'ina Supabase Cloud</h3>
+        <p class="muted">Project URL fi Anon Public Key galchuun Social Feed, Follow/Friend fi Live Chat online wal-qabsiisaa.</p>
+        <div class="form-group">
+          <label for="sb-url">Supabase Project URL</label>
+          <input type="url" id="sb-url" placeholder="https://xxxx.supabase.co" />
+        </div>
+        <div class="form-group">
+          <label for="sb-key">Supabase Anon Public Key</label>
+          <input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+        <button onclick="saveSupabaseConfig()" class="btn btn-primary btn-block">Supabase Wal-qabsiisi</button>
       </div>
     </section>
-
   </main>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast hidden"></div>
-
-  <!-- Mobile Bottom Navigation Bar -->
+  <!-- Bottom Navigation -->
   <nav class="bottom-nav">
-    <button class="nav-item active" data-target="page-auth">
+    <button class="nav-item active" data-target="view-auth" onclick="navigateTo('view-auth')">
       <span class="nav-icon">🔑</span>
-      <span class="nav-text">Seensa</span>
+      <span>Seensa</span>
     </button>
-    <button class="nav-item" data-target="page-dashboard">
-      <span class="nav-icon">📊</span>
-      <span class="nav-text">Dashboard</span>
+    <button class="nav-item" data-target="view-feed" onclick="navigateTo('view-feed')">
+      <span class="nav-icon">📰</span>
+      <span>Feed</span>
     </button>
-    <button class="nav-item" data-target="page-profile">
+    <button class="nav-item" data-target="view-people" onclick="navigateTo('view-people')">
+      <span class="nav-icon">👥</span>
+      <span>Hiriyoota</span>
+    </button>
+    <button class="nav-item" data-target="view-chat" onclick="navigateTo('view-chat')">
+      <span class="nav-icon">💬</span>
+      <span>Chat</span>
+    </button>
+    <button class="nav-item" data-target="view-profile" onclick="navigateTo('view-profile')">
       <span class="nav-icon">👤</span>
-      <span class="nav-text">Profile</span>
+      <span>Profile</span>
     </button>
   </nav>
 
-  <!-- Supabase JS SDK (Optional CDN for live cloud sync) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <div id="toast" class="toast"></div>
   <script src="app.js"></script>
 </body>
 </html>
