@@ -18,11 +18,10 @@ let supabaseClient = null;
 let authMode = 'login';
 let currentUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null');
 let feedFilter = 'all';
-let activeChatTarget = ''; // '' = Public Group Chat, otherwise target user's email
-let onlineUsersMap = {}; // Realtime presence map { email: { name, online_at } }
+let activeChatTarget = '';
+let onlineUsersMap = {};
 let heartbeatTimer = null;
 
-// In-memory state synced from Supabase or LocalStorage
 let state = {
   profiles: [],
   posts: [],
@@ -32,7 +31,6 @@ let state = {
   messages: []
 };
 
-// ---------------- INITIALIZATION ----------------
 window.addEventListener('DOMContentLoaded', async () => {
   registerSW();
   loadSupabaseConfigInputs();
@@ -76,7 +74,6 @@ function navigateTo(viewId) {
   }
 }
 
-// ---------------- SUPABASE CONNECTION ----------------
 function loadSupabaseConfigInputs() {
   document.getElementById('sb-url').value = localStorage.getItem(STORAGE_KEYS.SB_URL) || '';
   document.getElementById('sb-key').value = localStorage.getItem(STORAGE_KEYS.SB_KEY) || '';
@@ -94,7 +91,7 @@ function saveSupabaseConfig() {
   localStorage.setItem(STORAGE_KEYS.SB_URL, url);
   localStorage.setItem(STORAGE_KEYS.SB_KEY, key);
   initSupabase();
-  showToast('Qindaa\'inni Supabase ol-kaa\'ameera!');
+  showToast("Qindaa'inni Supabase ol-kaa'ameera!");
   refreshAllData();
 }
 
@@ -121,7 +118,6 @@ function initSupabase() {
   }
 }
 
-// ---------------- AUTH (LOGIN / REGISTER) ----------------
 function switchAuthMode(mode) {
   authMode = mode;
   document.getElementById('btn-show-login').classList.toggle('active', mode === 'login');
@@ -143,7 +139,7 @@ async function handleAuthSubmit(e) {
 
   if (supabaseClient) {
     if (authMode === 'register') {
-      const { data, error } = await supabaseClient.auth.signUp({
+      const { error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: { data: { full_name: name } }
@@ -152,13 +148,10 @@ async function handleAuthSubmit(e) {
         showToast('Dogoggora Galmee: ' + error.message);
         return;
       }
-      const userObj = {
-        name: name || email.split('@')[0],
-        email
-      };
+      const userObj = { name: name || email.split('@')[0], email };
       await upsertProfile(userObj);
       setLoggedInUser(userObj);
-      showToast('Galmeen keessan milkaa\'eera!');
+      showToast("Galmeen keessan milkaa'eera!");
     } else {
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) {
@@ -172,14 +165,10 @@ async function handleAuthSubmit(e) {
       showToast('Baga nagaan deebitan, ' + fullName + '!');
     }
   } else {
-    // Local fallback
-    const userObj = {
-      name: name || email.split('@')[0],
-      email
-    };
+    const userObj = { name: name || email.split('@')[0], email };
     await upsertProfile(userObj);
     setLoggedInUser(userObj);
-    showToast('Seensa Local milkaa\'eera!');
+    showToast("Seensa Local milkaa'eera!");
   }
 
   await refreshAllData();
@@ -224,7 +213,6 @@ function getInitials(name) {
     .join('');
 }
 
-// ---------------- PROFILES & ONLINE PRESENCE ----------------
 async function upsertProfile(userObj) {
   const payload = {
     email: userObj.email,
@@ -266,7 +254,6 @@ function isUserOnline(email) {
   return false;
 }
 
-// ---------------- REALTIME SUBSCRIPTIONS ----------------
 function setupRealtimeSubscriptions() {
   if (!supabaseClient) return;
 
@@ -312,7 +299,6 @@ function setupRealtimeSubscriptions() {
   window._nesruChannel = channel;
 }
 
-// ---------------- DATA LOADERS ----------------
 async function refreshAllData() {
   await Promise.all([
     loadProfiles(),
@@ -344,23 +330,10 @@ async function loadProfiles() {
 
 async function loadPosts() {
   if (supabaseClient) {
-    const { data } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
+    const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
     if (data) state.posts = data;
   } else {
     state.posts = JSON.parse(localStorage.getItem(STORAGE_KEYS.POSTS) || '[]');
-    if (state.posts.length === 0) {
-      state.posts = [
-        {
-          id: 1,
-          title: 'Baga Gara Nesru Michael Social App Dhuftan!',
-          body: 'As irratti barreeffama maxxansuu, Like, Comment fi Share gochuu, hiriyoota horachuu fi kallattiin chat gochuu dandeessu.',
-          author: 'Nesru Michael',
-          author_email: 'nesrumichael@gmail.com',
-          shares_count: 1,
-          created_at: new Date().toISOString()
-        }
-      ];
-    }
   }
   renderFeed();
   updateProfileStats();
@@ -378,7 +351,7 @@ async function loadLikes() {
 
 async function loadComments() {
   if (supabaseClient) {
-    const { data } = await supabaseClient.from('post_comments').select('*').order('id', { ascending: true });
+    const { data } = await supabaseClient.from('post_comments').select('*').order('created_at', { ascending: true });
     if (data) state.comments = data;
   } else {
     state.comments = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMMENTS) || '[]');
@@ -400,7 +373,7 @@ async function loadRelationships() {
 
 async function loadMessages() {
   if (supabaseClient) {
-    const { data } = await supabaseClient.from('messages').select('*').order('id', { ascending: true }).limit(150);
+    const { data } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true }).limit(150);
     if (data) state.messages = data;
   } else {
     state.messages = JSON.parse(localStorage.getItem(STORAGE_KEYS.MESSAGES) || '[]');
@@ -415,7 +388,6 @@ function renderAllViews() {
   updateProfileStats();
 }
 
-// ---------------- SHARED FEED: POST, LIKE, COMMENT, SHARE ----------------
 function setFeedFilter(mode) {
   feedFilter = mode;
   document.getElementById('filter-all').classList.toggle('active', mode === 'all');
@@ -454,7 +426,7 @@ async function handleCreatePost(e) {
     }
     await loadPosts();
   } else {
-    newPost.id = Date.now();
+    newPost.id = String(Date.now());
     newPost.created_at = new Date().toISOString();
     state.posts.unshift(newPost);
     localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(state.posts));
@@ -477,17 +449,22 @@ async function toggleLike(postId) {
   );
 
   if (supabaseClient) {
+    let res;
     if (existing) {
-      await supabaseClient.from('post_likes').delete().eq('id', existing.id);
+      res = await supabaseClient.from('post_likes').delete().eq('id', existing.id);
     } else {
-      await supabaseClient.from('post_likes').insert({ post_id: postId, user_email: currentUser.email });
+      res = await supabaseClient.from('post_likes').insert({ post_id: postId, user_email: currentUser.email });
+    }
+    if (res.error) {
+      showToast('Dogoggora Like: ' + res.error.message);
+      return;
     }
     await loadLikes();
   } else {
     if (existing) {
       state.likes = state.likes.filter((l) => l !== existing);
     } else {
-      state.likes.push({ id: Date.now(), post_id: postId, user_email: currentUser.email });
+      state.likes.push({ id: String(Date.now()), post_id: postId, user_email: currentUser.email });
     }
     localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(state.likes));
     renderFeed();
@@ -521,7 +498,7 @@ async function handleAddComment(e, postId) {
     }
     await loadComments();
   } else {
-    newComment.id = Date.now();
+    newComment.id = String(Date.now());
     state.comments.push(newComment);
     localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(state.comments));
     renderFeed();
@@ -537,7 +514,11 @@ async function handleSharePost(postId) {
 
   const nextShares = (post.shares_count || 0) + 1;
   if (supabaseClient) {
-    await supabaseClient.from('posts').update({ shares_count: nextShares }).eq('id', postId);
+    const { error } = await supabaseClient.from('posts').update({ shares_count: nextShares }).eq('id', postId);
+    if (error) {
+      showToast('Dogoggora Share: ' + error.message);
+      return;
+    }
     await loadPosts();
   } else {
     post.shares_count = nextShares;
@@ -550,7 +531,9 @@ async function handleSharePost(postId) {
     navigator.share({ title: post.title, text: shareText, url: window.location.href }).catch(() => {});
   } else if (navigator.clipboard) {
     navigator.clipboard.writeText(shareText);
-    showToast('Barreeffamni copy ta\'eera — bakka barbaaddanitti Share godhaa!');
+    showToast("Barreeffamni copy ta'eera — bakka barbaaddanitti Share godhaa!");
+  } else {
+    showToast('Share dabalameera!');
   }
 }
 
@@ -630,18 +613,18 @@ function renderFeed() {
           ${post.image_url ? `<img src="${escapeHtml(post.image_url)}" alt="Post image" class="post-img" loading="lazy" />` : ''}
 
           <div class="post-actions">
-            <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+            <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${escapeHtml(post.id)}')">
               👍 Like (${postLikes.length})
             </button>
-            <button class="action-btn" onclick="toggleCommentsPanel(${post.id})">
+            <button class="action-btn" onclick="toggleCommentsPanel('${escapeHtml(post.id)}')">
               💬 Comment (${postComments.length})
             </button>
-            <button class="action-btn" onclick="handleSharePost(${post.id})">
+            <button class="action-btn" onclick="handleSharePost('${escapeHtml(post.id)}')">
               🔗 Share (${post.shares_count || 0})
             </button>
           </div>
 
-          <div id="comments-box-${post.id}" class="comments-box">
+          <div id="comments-box-${escapeHtml(post.id)}" class="comments-box">
             ${postComments
               .map(
                 (c) => `
@@ -650,8 +633,8 @@ function renderFeed() {
                 </div>`
               )
               .join('')}
-            <form class="comment-form" onsubmit="handleAddComment(event, ${post.id})">
-              <input type="text" id="comment-input-${post.id}" placeholder="Yaada (comment) barreessi..." required />
+            <form class="comment-form" onsubmit="handleAddComment(event, '${escapeHtml(post.id)}')">
+              <input type="text" id="comment-input-${escapeHtml(post.id)}" placeholder="Yaada (comment) barreessi..." required />
               <button type="submit" class="btn btn-primary btn-sm">Ergi</button>
             </form>
           </div>
@@ -661,7 +644,6 @@ function renderFeed() {
     .join('');
 }
 
-// ---------------- PEOPLE: FOLLOW & ADD FRIEND ----------------
 async function toggleFollow(targetEmail) {
   if (!currentUser) {
     showToast('Follow gochuuf dura Seenaa!');
@@ -693,7 +675,7 @@ async function toggleFollow(targetEmail) {
       state.relationships = state.relationships.filter((r) => r !== existing);
     } else {
       state.relationships.push({
-        id: Date.now(),
+        id: String(Date.now()),
         sender_email: currentUser.email,
         receiver_email: targetEmail,
         rel_type: 'follow',
@@ -736,7 +718,7 @@ async function sendFriendRequest(targetEmail) {
     await loadRelationships();
   } else {
     state.relationships.push({
-      id: Date.now(),
+      id: String(Date.now()),
       sender_email: currentUser.email,
       receiver_email: targetEmail,
       rel_type: 'friend',
@@ -758,7 +740,7 @@ async function acceptFriendRequest(relId) {
     localStorage.setItem(STORAGE_KEYS.RELS, JSON.stringify(state.relationships));
     renderPeople();
   }
-  showToast('Hiriyummaan mirkanaa\'eera!');
+  showToast("Hiriyummaan mirkanaa'eera!");
 }
 
 function renderPeople() {
@@ -769,7 +751,6 @@ function renderPeople() {
 
   const query = (document.getElementById('people-search')?.value || '').toLowerCase();
 
-  // Incoming Friend Requests
   if (currentUser) {
     const incoming = state.relationships.filter(
       (r) => r.receiver_email === currentUser.email && r.rel_type === 'friend' && r.status === 'pending'
@@ -786,7 +767,7 @@ function renderPeople() {
                 <strong>${escapeHtml(sName)}</strong>
                 <div class="muted">${escapeHtml(r.sender_email)}</div>
               </div>
-              <button class="btn btn-success btn-sm" onclick="acceptFriendRequest(${r.id})">✓ Accept Friend</button>
+              <button class="btn btn-success btn-sm" onclick="acceptFriendRequest('${escapeHtml(r.id)}')">✓ Accept Friend</button>
             </div>
           `;
         })
@@ -798,7 +779,6 @@ function renderPeople() {
     reqBox.classList.add('hidden');
   }
 
-  // Merge profiles + post authors so every active person shows up
   const map = new Map();
   state.profiles.forEach((p) => map.set(p.email, { email: p.email, full_name: p.full_name }));
   state.posts.forEach((p) => {
@@ -809,9 +789,7 @@ function renderPeople() {
 
   const people = Array.from(map.values()).filter((p) => {
     if (currentUser && p.email === currentUser.email) return false;
-    return (
-      p.full_name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query)
-    );
+    return p.full_name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query);
   });
 
   if (people.length === 0) {
@@ -874,7 +852,6 @@ function renderPeople() {
     .join('');
 }
 
-// ---------------- LIVE CHAT + ONLINE INDICATOR ----------------
 function updateChatTargetOptions() {
   const select = document.getElementById('chat-target-select');
   if (!select) return;
@@ -911,10 +888,7 @@ function switchChatTarget(targetEmail) {
 
   if (!targetEmail) {
     titleEl.textContent = 'Chat Waliinii (Public Group)';
-    const onlineCount = Math.max(
-      1,
-      state.profiles.filter((p) => isUserOnline(p.email)).length
-    );
+    const onlineCount = Math.max(1, state.profiles.filter((p) => isUserOnline(p.email)).length);
     statusEl.innerHTML = `<span class="dot-online"></span> ${onlineCount} Online amma`;
   } else {
     const prof = state.profiles.find((p) => p.email === targetEmail);
@@ -956,7 +930,7 @@ async function handleSendMessage(e) {
     }
     await loadMessages();
   } else {
-    newMsg.id = Date.now();
+    newMsg.id = String(Date.now());
     newMsg.created_at = new Date().toISOString();
     state.messages.push(newMsg);
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(state.messages));
@@ -971,7 +945,6 @@ function renderChat() {
   const container = document.getElementById('chat-messages');
   if (!container) return;
 
-  // Refresh header online indicator dynamically
   if (!activeChatTarget) {
     const onlineCount = Math.max(1, state.profiles.filter((p) => isUserOnline(p.email)).length);
     const statusEl = document.getElementById('chat-room-status');
@@ -1027,7 +1000,6 @@ function scrollChatToBottom() {
   if (box) box.scrollTop = box.scrollHeight;
 }
 
-// ---------------- PROFILE STATS & HELPERS ----------------
 function updateProfileStats() {
   if (!currentUser) return;
   const myPosts = state.posts.filter((p) => p.author_email === currentUser.email).length;
@@ -1060,4 +1032,4 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
+    }
