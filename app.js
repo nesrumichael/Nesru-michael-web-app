@@ -1,5 +1,5 @@
 // ==========================================================
-// NESRU MICHAEL WEB APP v2 - SOCIAL FEED, FRIENDS & LIVE CHAT
+// NESRU MICHAEL SOCIAL NETWORK - FEED, FRIENDS, PROFILES & CHAT
 // ==========================================================
 
 const STORAGE_KEYS = {
@@ -11,7 +11,8 @@ const STORAGE_KEYS = {
   COMMENTS: 'nesru_local_comments',
   RELS: 'nesru_local_rels',
   MESSAGES: 'nesru_local_messages',
-  PROFILES: 'nesru_local_profiles'
+  PROFILES: 'nesru_local_profiles',
+  THEME: 'nesru_dark_mode'
 };
 
 let supabaseClient = null;
@@ -32,6 +33,7 @@ let state = {
 };
 
 window.addEventListener('DOMContentLoaded', async () => {
+  applySavedTheme();
   registerSW();
   loadSupabaseConfigInputs();
   initSupabase();
@@ -44,6 +46,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   await refreshAllData();
   startPresenceHeartbeat();
 });
+
+function applySavedTheme() {
+  if (localStorage.getItem(STORAGE_KEYS.THEME) === '1') {
+    document.body.classList.add('dark-mode');
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem(STORAGE_KEYS.THEME, isDark ? '1' : '0');
+  showToast(isDark ? 'Dark Mode banameera.' : 'Light Mode banameera.');
+}
 
 function registerSW() {
   if ('serviceWorker' in navigator) {
@@ -162,7 +176,7 @@ async function handleAuthSubmit(e) {
         showToast('Dogoggora Galmee: ' + error.message);
         return;
       }
-      const userObj = { name: name || email.split('@')[0], email };
+      const userObj = { name: name || email.split('@')[0], email, bio: '', avatar_url: '' };
       await upsertProfile(userObj);
       setLoggedInUser(userObj);
       showToast("Galmeen keessan milkaa'eera!");
@@ -172,14 +186,26 @@ async function handleAuthSubmit(e) {
         showToast('Dogoggora Seensaa: ' + error.message);
         return;
       }
-      const fullName = data.user?.user_metadata?.full_name || email.split('@')[0];
-      const userObj = { name: fullName, email };
+      const existingProf = state.profiles.find((p) => p.email === email);
+      const fullName = existingProf?.full_name || data.user?.user_metadata?.full_name || email.split('@')[0];
+      const userObj = {
+        name: fullName,
+        email,
+        bio: existingProf?.bio || '',
+        avatar_url: existingProf?.avatar_url || ''
+      };
       await upsertProfile(userObj);
       setLoggedInUser(userObj);
       showToast('Baga nagaan deebitan, ' + fullName + '!');
     }
   } else {
-    const userObj = { name: name || email.split('@')[0], email };
+    const existingProf = state.profiles.find((p) => p.email === email);
+    const userObj = {
+      name: name || existingProf?.full_name || email.split('@')[0],
+      email,
+      bio: existingProf?.bio || '',
+      avatar_url: existingProf?.avatar_url || ''
+    };
     await upsertProfile(userObj);
     setLoggedInUser(userObj);
     showToast("Seensa Local milkaa'eera!");
@@ -210,17 +236,61 @@ function handleLogout() {
 function updateUserUI() {
   const name = currentUser ? currentUser.name : 'Nesru Michael';
   const email = currentUser ? currentUser.email : 'nesrumichael@gmail.com';
-  const initials = getInitials(name);
+  const bio = currentUser?.bio || '';
+  const avatarUrl = currentUser?.avatar_url || '';
 
   const avatarEl = document.getElementById('profile-avatar');
   const nameEl = document.getElementById('profile-name');
   const emailEl = document.getElementById('profile-email');
+  const bioEl = document.getElementById('profile-bio-preview');
   const tagEl = document.getElementById('feed-user-tag');
 
-  if (avatarEl) avatarEl.textContent = initials;
+  if (avatarEl) {
+    avatarEl.innerHTML = avatarUrl
+      ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}" />`
+      : escapeHtml(getInitials(name));
+  }
   if (nameEl) nameEl.textContent = name;
   if (emailEl) emailEl.textContent = email;
+  if (bioEl) bioEl.textContent = bio;
   if (tagEl) tagEl.textContent = currentUser ? currentUser.name : 'Seenaa (Guest)';
+}
+
+function toggleEditProfileBox() {
+  if (!currentUser) {
+    showToast('Profile gulaaluuf dura Seenaa!');
+    return;
+  }
+  const form = document.getElementById('edit-profile-form');
+  if (!form) return;
+  form.classList.toggle('hidden');
+  document.getElementById('edit-prof-name').value = currentUser.name || '';
+  document.getElementById('edit-prof-bio').value = currentUser.bio || '';
+  document.getElementById('edit-prof-avatar').value = currentUser.avatar_url || '';
+}
+
+async function handleSaveProfileDetails(e) {
+  e.preventDefault();
+  if (!currentUser) return;
+
+  const newName = document.getElementById('edit-prof-name').value.trim();
+  const newBio = document.getElementById('edit-prof-bio').value.trim();
+  const newAvatar = document.getElementById('edit-prof-avatar').value.trim();
+
+  if (!newName) return;
+
+  const updated = {
+    ...currentUser,
+    name: newName,
+    bio: newBio,
+    avatar_url: newAvatar
+  };
+
+  await upsertProfile(updated);
+  setLoggedInUser(updated);
+  document.getElementById('edit-profile-form').classList.add('hidden');
+  await loadProfiles();
+  showToast('Profile & Bio keessan haaromfameera!');
 }
 
 function getInitials(name) {
@@ -232,10 +302,19 @@ function getInitials(name) {
     .join('');
 }
 
+function renderAvatarInner(name, avatarUrl) {
+  if (avatarUrl) {
+    return `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}" />`;
+  }
+  return escapeHtml(getInitials(name));
+}
+
 async function upsertProfile(userObj) {
   const payload = {
     email: userObj.email,
     full_name: userObj.name,
+    bio: userObj.bio || '',
+    avatar_url: userObj.avatar_url || '',
     last_seen: new Date().toISOString()
   };
 
@@ -338,7 +417,7 @@ async function loadProfiles() {
     state.profiles = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROFILES) || '[]');
     if (state.profiles.length === 0) {
       state.profiles = [
-        { email: 'nesrumichael@gmail.com', full_name: 'Nesru Michael', bio: '', last_seen: new Date().toISOString() }
+        { email: 'nesrumichael@gmail.com', full_name: 'Nesru Michael', bio: 'Founder & Developer', avatar_url: '', last_seen: new Date().toISOString() }
       ];
     }
   }
@@ -454,6 +533,19 @@ async function handleCreatePost(e) {
 
   document.getElementById('post-form').reset();
   showToast('Barreeffamni keessan maxxanfameera!');
+}
+
+async function deletePost(postId) {
+  if (!currentUser) return;
+  if (supabaseClient) {
+    await supabaseClient.from('posts').delete().eq('id', postId);
+    await loadPosts();
+  } else {
+    state.posts = state.posts.filter((p) => String(p.id) !== String(postId));
+    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(state.posts));
+    renderFeed();
+  }
+  showToast('Barreeffamni haqameera.');
 }
 
 async function toggleLike(postId) {
@@ -588,6 +680,7 @@ function renderFeed() {
       const postComments = state.comments.filter((c) => String(c.post_id) === String(post.id));
       const online = isUserOnline(post.author_email);
       const isMe = currentUser && post.author_email === currentUser.email;
+      const authorProf = state.profiles.find((p) => p.email === post.author_email);
       const isFollowing =
         currentUser &&
         state.relationships.some(
@@ -602,7 +695,7 @@ function renderFeed() {
           <div class="post-header">
             <div class="post-author-info">
               <div class="avatar-sm" style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(post.author_email)}')">
-                ${escapeHtml(getInitials(post.author))}
+                ${renderAvatarInner(post.author, authorProf?.avatar_url)}
                 <span class="presence-pin ${online ? 'dot-online' : 'dot-offline'}"></span>
               </div>
               <div>
@@ -614,7 +707,9 @@ function renderFeed() {
               </div>
             </div>
             ${
-              !isMe && post.author_email
+              isMe
+                ? `<button class="btn btn-sm btn-outline" onclick="deletePost('${escapeHtml(post.id)}')" title="Haqi">🗑️</button>`
+                : post.author_email
                 ? `<div style="display:flex;gap:5px;">
                     <button class="btn btn-sm ${isFollowing ? 'btn-success' : 'btn-outline'}"
                       onclick="toggleFollow('${escapeHtml(post.author_email)}')">
@@ -648,7 +743,9 @@ function renderFeed() {
               .map(
                 (c) => `
                 <div class="comment-item">
-                  <strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(c.author_email)}')">${escapeHtml(c.author_name)}:</strong> ${escapeHtml(c.comment_text)}
+                  <div>
+                    <strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(c.author_email)}')">${escapeHtml(c.author_name)}:</strong> ${escapeHtml(c.comment_text)}
+                  </div>
                 </div>`
               )
               .join('')}
@@ -766,6 +863,7 @@ function renderPeople() {
   const container = document.getElementById('people-list');
   const reqBox = document.getElementById('friend-requests-box');
   const reqList = document.getElementById('friend-requests-list');
+  const reqBadge = document.getElementById('req-badge');
   if (!container) return;
 
   const query = (document.getElementById('people-search')?.value || '').toLowerCase();
@@ -774,6 +872,10 @@ function renderPeople() {
     const incoming = state.relationships.filter(
       (r) => r.receiver_email === currentUser.email && r.rel_type === 'friend' && r.status === 'pending'
     );
+    if (reqBadge) {
+      reqBadge.textContent = incoming.length;
+      reqBadge.classList.toggle('hidden', incoming.length === 0);
+    }
     if (incoming.length > 0) {
       reqBox.classList.remove('hidden');
       reqList.innerHTML = incoming
@@ -794,15 +896,18 @@ function renderPeople() {
     } else {
       reqBox.classList.add('hidden');
     }
-  } else if (reqBox) {
-    reqBox.classList.add('hidden');
+  } else {
+    if (reqBox) reqBox.classList.add('hidden');
+    if (reqBadge) reqBadge.classList.add('hidden');
   }
 
   const map = new Map();
-  state.profiles.forEach((p) => map.set(p.email, { email: p.email, full_name: p.full_name }));
+  state.profiles.forEach((p) =>
+    map.set(p.email, { email: p.email, full_name: p.full_name, avatar_url: p.avatar_url })
+  );
   state.posts.forEach((p) => {
     if (p.author_email && !map.has(p.author_email)) {
-      map.set(p.author_email, { email: p.author_email, full_name: p.author });
+      map.set(p.author_email, { email: p.author_email, full_name: p.author, avatar_url: '' });
     }
   });
 
@@ -846,7 +951,7 @@ function renderPeople() {
         <div class="person-card">
           <div class="post-author-info">
             <div class="avatar-sm" style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(p.email)}')">
-              ${escapeHtml(getInitials(p.full_name))}
+              ${renderAvatarInner(p.full_name, p.avatar_url)}
               <span class="presence-pin ${online ? 'dot-online' : 'dot-offline'}"></span>
             </div>
             <div>
@@ -1043,6 +1148,9 @@ function updateProfileStats() {
   if (friendsEl) friendsEl.textContent = friends;
 }
 
+// ==========================================================
+// PUBLIC PROFILE MODAL
+// ==========================================================
 function openPublicProfile(email) {
   if (!email) return;
   const modal = document.getElementById('public-profile-modal');
@@ -1076,18 +1184,19 @@ function openPublicProfile(email) {
       <span><strong>${followersCount}</strong> Followers</span>
       <span><strong>${friendsCount}</strong> Friends</span>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
       <button type="button" class="btn btn-primary btn-sm" onclick="closePublicProfile(); toggleFollow('${escapeHtml(email)}')">+ Follow</button>
+      <button type="button" class="btn btn-outline btn-sm" onclick="closePublicProfile(); sendFriendRequest('${escapeHtml(email)}')">+ Add Friend</button>
       <button type="button" class="btn btn-outline btn-sm" onclick="closePublicProfile(); openDirectChat('${escapeHtml(email)}')">💬 Chat</button>
     </div>
     <hr />
-    <h4>Barreeffamoota (${userPosts.length})</h4>
+    <h4 style="margin:8px 0;">Barreeffamoota (${userPosts.length})</h4>
     ${
       userPosts.length
         ? userPosts
             .map(
               (p) => `
-              <div style="border-bottom:1px solid #eee;padding:8px 0;">
+              <div style="border-bottom:1px solid #e2e8f0;padding:8px 0;">
                 <strong>${escapeHtml(p.title)}</strong>
                 <p style="margin:4px 0;font-size:14px;">${escapeHtml(p.body)}</p>
               </div>`
@@ -1105,6 +1214,105 @@ function closePublicProfile() {
   if (modal) modal.classList.add('hidden');
 }
 
+// ==========================================================
+// SETTINGS, ABOUT, PRIVACY, TERMS, TRANSPARENCY, CONTACT & SUPPORT
+// ==========================================================
+function openInfoModal(sectionKey) {
+  const modal = document.getElementById('info-modal');
+  const titleEl = document.getElementById('info-modal-title');
+  const bodyEl = document.getElementById('info-modal-body');
+  if (!modal || !titleEl || !bodyEl) return;
+
+  const sections = {
+    settings: {
+      title: '⚙️ Settings (Qindaa’ina Appii)',
+      html: `
+        <p><strong>Abbaa Appii:</strong> Nesru Michael</p>
+        <p style="margin-top:6px;"><strong>Haala Wal-qunnamtii:</strong> ${supabaseClient ? 'Supabase Cloud (Real-time)' : 'Local Mode'}</p>
+        <div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="toggleDarkMode()">🌓 Dark / Light Mode Jijjiiri</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeInfoModal(); navigateTo('view-auth')">✏️ Profile & Bio Gulaali</button>
+        </div>
+        <p class="muted">Qindaa'ina Supabase jijjiiruuf fuula Profile jalaa <em>Qindaa'ina Supabase Cloud</em> fayyadami.</p>
+      `
+    },
+    about: {
+      title: 'ℹ️ About Nesru Michael',
+      html: `
+        <p><strong>Nesru Michael Social Network</strong> waltajjii hawaasaa kan <strong>Nesru Michael</strong> tiin qophaa'e yoo ta'u, namoonni daangaa malee itti galmaa'anii yaada isaanii itti qoodan, hiriyoota itti horatan, fi yeroo qabatamaa (Live Chat) keessatti itti mari'ataniidha.</p>
+        <p style="margin-top:8px;"><strong>Tajaajiloota Ijoo:</strong></p>
+        <ul style="margin-left:18px;margin-top:4px;">
+          <li>Barreeffamaa fi suuraa maxxansuu (Feed, Like, Comment, Share).</li>
+          <li>Wal hordofuu fi hiriyummaa uumuu (Follow &amp; Add Friend).</li>
+          <li>Profile dhuunfaa (Public Profile &amp; Bio) ilaaluu.</li>
+          <li>Ergaa kallattii fi waliinii (Real-time Chat).</li>
+        </ul>
+      `
+    },
+    privacy: {
+      title: '🔒 Privacy Policy (Imaammata Dhuunfaa)',
+      html: `
+        <p><strong>Imaammata Eegumsa Odeeffannoo — Nesru Michael</strong></p>
+        <p style="margin-top:8px;">1. <strong>Odeeffannoo Nuti Sassaabnu:</strong> Maqaa, email, bio, suuraa profile, barreeffamoota, fi ergaa chat isin galchitan qofa hojii appii kanaaf ol-kaa'ama.</p>
+        <p style="margin-top:6px;">2. <strong>Itti Fayyadama Daataa:</strong> Odeeffannoon keessan tajaajila hawaasummaa appii kanaa kennuuf malee qaama sadaffaatti hin gurguramu.</p>
+        <p style="margin-top:6px;">3. <strong>To'annoo Fayyadamaa:</strong> Yeroo barbaaddanitti profile keessan gulaaluu, barreeffama keessan haquu, ykn akkaawuntii keessaa ba'uu dandeessu.</p>
+      `
+    },
+    terms: {
+      title: '📄 Terms of Service (Waliigaltee Tajaajilaa)',
+      html: `
+        <p><strong>Waliigaltee Fayyadama Appii Nesru Michael:</strong></p>
+        <p style="margin-top:8px;">1. Fayyadamaan kamiyyuu kabajaa fi seera hawaasummaa eeguun barreeffama maxxansuu qaba.</p>
+        <p style="margin-top:6px;">2. Dubbii jibbiinsaa, doorsisa, soba nama miidhu, ykn qabiyyee seeraan ala ta'e maxxansuun dhorkaadha.</p>
+        <p style="margin-top:6px;">3. Mirgi kalaqaa fi dizaayinii appii kanaa kan <strong>&copy; 2026 Nesru Michael</strong> ti.</p>
+      `
+    },
+    transparency: {
+      title: '🔍 Transparency (Iftoomina)',
+      html: `
+        <p><strong>Iftoomina Sirnaa — Nesru Michael:</strong></p>
+        <ul style="margin-left:18px;margin-top:6px;">
+          <li><strong>Kuusaa Daataa:</strong> Daataan hawaasaa nageenyaan <em>Supabase</em> irratti kuufama.</li>
+          <li><strong>Lakkoofsa Qabatamaa:</strong> Lakkoofsi <em>Likes, Comments, Shares, Followers, fi Friends</em> galmee sirnaa dhugaa irratti hundaa'a.</li>
+          <li><strong>Haala Online:</strong> Mallattoon magariisaa (● Online) fayyadamaan sun yeroo dhihootti appii irra jiraachuu isaa agarsiisa.</li>
+        </ul>
+      `
+    },
+    contact: {
+      title: '✉️ Contact (Nu Qunnamaa)',
+      html: `
+        <p>Yaada, gaaffii, ykn wal-ta'iinsa hojiif kallattiin nu qunnamuu dandeessu:</p>
+        <p style="margin-top:8px;"><strong>Hundeessaa &amp; Abbaa Appii:</strong> Nesru Michael</p>
+        <p style="margin-top:4px;"><strong>Email:</strong> <a href="mailto:nesrumichael@gmail.com">nesrumichael@gmail.com</a></p>
+        <p style="margin-top:4px;"><strong>Website:</strong> <a href="https://nesru.dev" target="_blank" rel="noopener">https://nesru.dev</a></p>
+      `
+    },
+    support: {
+      title: '🎧 Support & Help Center',
+      html: `
+        <p>Yoo rakkoon galmee (Login/Register), barreeffama maxxansuu, ykn chat si mudate:</p>
+        <ul style="margin-left:18px;margin-top:6px;">
+          <li>Fuula <em>Refresh</em> godhiitii irra deebi'ii yaali.</li>
+          <li>Gargaarsa teeknikaa saffisaaf email kanaan nuuf barreessi: <a href="mailto:nesrumichael@gmail.com">nesrumichael@gmail.com</a></li>
+        </ul>
+        <p style="margin-top:10px;" class="muted">&copy; 2026 Nesru Michael Support Team</p>
+      `
+    }
+  };
+
+  const sec = sections[sectionKey];
+  if (!sec) return;
+
+  titleEl.textContent = sec.title;
+  bodyEl.innerHTML = sec.html;
+  modal.classList.remove('hidden');
+}
+
+function closeInfoModal() {
+  const modal = document.getElementById('info-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
 function formatTime(iso) {
   if (!iso) return 'Amma';
   const d = new Date(iso);
@@ -1119,4 +1327,4 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-  }
+    }
