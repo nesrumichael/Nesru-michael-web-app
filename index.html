@@ -2,213 +2,449 @@
 <html lang="om">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
-  <title>Nesru Michael • Social & Live Chat</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="style.css" />
+  <title>Nesru Michael — Social Feed, Friends & Live Chat</title>
+  <link rel="manifest" href="./manifest.json" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding-bottom: 76px;
+    }
+    .hidden { display: none !important; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .brand { font-weight: 800; font-size: 16px; letter-spacing: 0.2px; }
+    .badge {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .badge-cloud { background: #16a34a; color: #fff; }
+    .badge-local { background: #f59e0b; color: #0f172a; }
+
+    .container { max-width: 720px; margin: 0 auto; padding: 14px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+    .muted { color: #64748b; font-size: 13px; }
+
+    .form-group { margin-bottom: 10px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+    }
+    textarea { min-height: 84px; resize: vertical; }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-outline { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+    .auth-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .auth-tabs .btn { flex: 1; justify-content: center; }
+    .auth-tabs .btn.active { background: #0f172a; color: #fff; }
+
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .filter-btns { display: flex; gap: 6px; }
+    .filter-btns .btn.active { background: #2563eb; color: #fff; }
+
+    .post-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+    .post-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .post-author-info { display: flex; align-items: center; gap: 10px; }
+    .avatar-sm {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .avatar-lg {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #fff;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .presence-pin {
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+    }
+    .dot-online { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
+    .dot-offline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+    .status-sub { font-size: 12px; color: #64748b; }
+
+    .post-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .post-body { font-size: 14px; line-height: 1.5; margin-bottom: 8px; white-space: pre-wrap; }
+    .post-img { width: 100%; max-height: 360px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
+
+    .post-actions {
+      display: flex;
+      gap: 6px;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 6px 0;
+      margin-bottom: 8px;
+    }
+    .action-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 7px 4px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+    }
+    .action-btn.liked { color: #2563eb; background: #eff6ff; }
+
+    .comments-box { background: #f8fafc; border-radius: 8px; padding: 8px; }
+    .comment-item { font-size: 13px; padding: 4px 0; border-bottom: 1px solid #e2e8f0; }
+    .comment-item:last-of-type { border-bottom: none; }
+    .comment-form { display: flex; gap: 6px; margin-top: 8px; }
+
+    .person-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+    .person-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .chat-box { display: flex; flex-direction: column; height: 62vh; min-height: 340px; }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .msg-bubble {
+      max-width: 78%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #e2e8f0;
+      color: #0f172a;
+      align-self: flex-start;
+      font-size: 14px;
+    }
+    .msg-bubble.mine { background: #2563eb; color: #fff; align-self: flex-end; }
+    .msg-meta { font-size: 11px; opacity: 0.8; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+    .chat-form { display: flex; gap: 8px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; text-align: center; }
+    .stat-box { background: #f8fafc; border-radius: 8px; padding: 10px; }
+    .stat-num { font-size: 18px; font-weight: 800; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .modal-card {
+      background: #fff;
+      width: 100%;
+      max-width: 520px;
+      max-height: 85vh;
+      overflow-y: auto;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 12px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      background: #fff;
+      border-top: 1px solid #e2e8f0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .nav-item {
+      background: transparent;
+      border: none;
+      padding: 9px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+    }
+    .nav-item.active { color: #2563eb; background: #eff6ff; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 72px;
+      transform: translateX(-50%) translateY(20px);
+      background: #0f172a;
+      color: #fff;
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 80;
+      max-width: 92%;
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
 </head>
 <body>
-  <!-- Top Header -->
-  <header class="app-header">
-    <div class="brand">
-      <div class="logo-badge">NM</div>
-      <div>
-        <h1>Nesru Michael</h1>
-        <p id="header-status" class="status-sub">
-          <span class="dot-online"></span> Online • Social & Chat
-        </p>
-      </div>
-    </div>
+  <header class="topbar">
+    <div class="brand">Nesru Michael</div>
     <span id="cloud-badge" class="badge badge-local">Local Mode</span>
   </header>
 
   <main class="container">
-    <!-- TAB 1: SEENSA (LOGIN / REGISTER) -->
-    <section id="view-auth" class="view active">
-      <div class="card hero-card">
-        <h2>Baga Nagaan Dhuftan!</h2>
-        <p class="muted">Galmaa'aa ykn seenaa — barreeffama walii argaa, Like/Comment/Share godhaa, hiriyoota horadhaa fi kallattiin chat godhaa.</p>
-      </div>
-
+    <!-- FEED VIEW -->
+    <section id="view-feed" class="view active">
       <div class="card">
-        <div class="tabs-toggle">
-          <button id="btn-show-login" class="toggle-btn active" onclick="switchAuthMode('login')">Seeni (Login)</button>
-          <button id="btn-show-register" class="toggle-btn" onclick="switchAuthMode('register')">Galmaa'i (Register)</button>
+        <div class="filter-bar">
+          <div>
+            <strong>Barreeffama Haaraa</strong>
+            <div class="muted">Akka: <span id="feed-user-tag">Seenaa (Guest)</span></div>
+          </div>
+          <div class="filter-btns">
+            <button type="button" id="filter-all" class="btn btn-sm btn-outline active" onclick="setFeedFilter('all')">Hundaa</button>
+            <button type="button" id="filter-following" class="btn btn-sm btn-outline" onclick="setFeedFilter('following')">Following</button>
+          </div>
         </div>
 
-        <form id="auth-form" onsubmit="handleAuthSubmit(event)">
-          <div id="field-name" class="form-group hidden">
-            <label for="auth-name">Maqaa Guutuu</label>
-            <input type="text" id="auth-name" placeholder="Fkn: Nesru Michael" />
-          </div>
-          <div class="form-group">
-            <label for="auth-email">Email</label>
-            <input type="email" id="auth-email" placeholder="maqaa@gmail.com" required />
-          </div>
-          <div class="form-group">
-            <label for="auth-password">Jecha Iccitii (Password - Qubee 6+)</label>
-            <input type="password" id="auth-password" placeholder="••••••••" minlength="6" required />
-          </div>
-          <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-block">Seeni</button>
-        </form>
-      </div>
-
-      <div class="card info-card">
-        <h3>Odeeffannoo Quunnamtii</h3>
-        <p><strong>Maqaa:</strong> Nesru Michael</p>
-        <p><strong>Email:</strong> nesrumichael@gmail.com</p>
-        <p><strong>Bilbila:</strong> +251923502787</p>
-      </div>
-    </section>
-
-    <!-- TAB 2: SHARED FEED (POSTS, LIKE, COMMENT, SHARE) -->
-    <section id="view-feed" class="view">
-      <!-- Create Post Box -->
-      <div class="card">
-        <div class="section-head">
-          <h3>Barreeffama Haaraa Maxxansi</h3>
-          <span id="feed-user-tag" class="pill">Keessummaa</span>
-        </div>
         <form id="post-form" onsubmit="handleCreatePost(event)">
           <div class="form-group">
             <input type="text" id="post-title" placeholder="Mata-duree barreeffamaa..." required />
           </div>
           <div class="form-group">
-            <textarea id="post-body" rows="3" placeholder="Yaada keessan hawaasaaf qoodaa..." required></textarea>
+            <textarea id="post-body" placeholder="Maal yaadaa jirtu?..." required></textarea>
           </div>
           <div class="form-group">
-            <input type="url" id="post-image" placeholder="Linkii suuraa (yoo jiraate - filannoo)" />
+            <input type="url" id="post-image" placeholder="Linkii suuraa (https://...) - filannoo" />
           </div>
-          <button type="submit" class="btn btn-primary btn-block">Maxxansi (Post)</button>
+          <button type="submit" class="btn btn-primary">Maxxansi</button>
         </form>
       </div>
 
-      <!-- Feed Filter -->
-      <div class="feed-filter-bar">
-        <button class="chip active" id="filter-all" onclick="setFeedFilter('all')">Hundaa (All)</button>
-        <button class="chip" id="filter-following" onclick="setFeedFilter('following')">Kan Hordofu (Following)</button>
-      </div>
-
-      <!-- Posts Container -->
-      <div id="posts-list" class="stack"></div>
+      <div id="posts-list"></div>
     </section>
 
-    <!-- TAB 3: HIRIYOOTA (PEOPLE: FOLLOW & ADD FRIEND) -->
+    <!-- PEOPLE VIEW -->
     <section id="view-people" class="view">
       <div class="card">
-        <h3>Fayyadamtoota & Hiriyoota</h3>
-        <p class="muted">Namoota galmaa'an hordofaa (Follow), hiriyaa godhadhaa (Add Friend), fi eenyu akka <strong>Online</strong> jiru ilaalaa.</p>
-        <div class="form-group" style="margin-top:10px; margin-bottom:0;">
-          <input type="text" id="people-search" placeholder="Maqaa ykn email barbaadi..." oninput="renderPeople()" />
-        </div>
+        <h3 style="margin-bottom:8px;">Namoota (People & Friends)</h3>
+        <input type="search" id="people-search" placeholder="Maqaa ykn email barbaadi..." oninput="renderPeople()" />
       </div>
 
       <div id="friend-requests-box" class="card hidden">
-        <h4>Gaaffii Hiriyummaa Dhufe (Friend Requests)</h4>
-        <div id="friend-requests-list" class="stack"></div>
+        <h4 style="margin-bottom:8px;">Gaaffii Hiriyummaa Dhufe</h4>
+        <div id="friend-requests-list"></div>
       </div>
 
-      <div id="people-list" class="stack"></div>
+      <div id="people-list"></div>
     </section>
 
-    <!-- TAB 4: LIVE CHAT (ONLINE STATUS + GROUP & DM) -->
+    <!-- CHAT VIEW -->
     <section id="view-chat" class="view">
-      <div class="card chat-shell">
-        <div class="chat-top">
-          <div>
-            <h3 id="chat-room-title">Chat Waliinii (Public Group)</h3>
-            <p id="chat-room-status" class="status-sub">
-              <span class="dot-online"></span> <span id="online-count">1</span> Online amma
-            </p>
-          </div>
-          <select id="chat-target-select" class="chat-select" onchange="switchChatTarget(this.value)">
+      <div class="card chat-box">
+        <div class="form-group" style="margin-bottom:6px;">
+          <select id="chat-target-select" onchange="switchChatTarget(this.value)">
             <option value="">🌍 Chat Waliinii (Hundaa)</option>
           </select>
         </div>
 
+        <div>
+          <strong id="chat-room-title">Chat Waliinii (Public Group)</strong>
+          <div id="chat-room-status" class="status-sub"><span class="dot-online"></span> 1 Online amma</div>
+        </div>
+
         <div id="chat-messages" class="chat-messages"></div>
 
-        <form id="chat-form" class="chat-input-row" onsubmit="handleSendMessage(event)">
-          <input type="text" id="chat-input" placeholder="Ergaa barreessi..." autocomplete="off" required />
+        <form class="chat-form" onsubmit="handleSendMessage(event)">
+          <input type="text" id="chat-input" placeholder="Ergaa barreessi..." required />
           <button type="submit" class="btn btn-primary">Ergi</button>
         </form>
       </div>
     </section>
 
-    <!-- TAB 5: PROFILE & SUPABASE SETTINGS -->
-    <section id="view-profile" class="view">
-      <div class="card profile-hero">
-        <div class="avatar-lg" id="profile-avatar">NM</div>
-        <h2 id="profile-name">Nesru Michael</h2>
-        <p id="profile-email" class="muted">nesrumichael@gmail.com</p>
-        <div class="stats-row">
-          <div class="stat-box">
-            <strong id="stat-posts">0</strong>
-            <span>Post</span>
-          </div>
-          <div class="stat-box">
-            <strong id="stat-followers">0</strong>
-            <span>Followers</span>
-          </div>
-          <div class="stat-box">
-            <strong id="stat-friends">0</strong>
-            <span>Friends</span>
+    <!-- PROFILE & AUTH VIEW -->
+    <section id="view-auth" class="view">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="profile-avatar" class="avatar-lg">NM</div>
+          <div>
+            <h3 id="profile-name">Nesru Michael</h3>
+            <div id="profile-email" class="muted">nesrumichael@gmail.com</div>
           </div>
         </div>
-        <button onclick="handleLogout()" class="btn btn-danger btn-block" style="margin-top:12px;">Ba'i (Logout)</button>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div id="stat-posts" class="stat-num">0</div>
+            <div class="muted">Posts</div>
+          </div>
+          <div class="stat-box">
+            <div id="stat-followers" class="stat-num">0</div>
+            <div class="muted">Followers</div>
+          </div>
+          <div class="stat-box">
+            <div id="stat-friends" class="stat-num">0</div>
+            <div class="muted">Friends</div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="handleLogout()">Ba'i (Logout)</button>
       </div>
 
       <div class="card">
-        <h3>Qindaa'ina Supabase Cloud</h3>
-        <p class="muted">Project URL fi Anon Public Key galchuun Social Feed, Follow/Friend fi Live Chat online wal-qabsiisaa.</p>
+        <div class="auth-tabs">
+          <button type="button" id="btn-show-login" class="btn btn-outline active" onclick="switchAuthMode('login')">Seeni</button>
+          <button type="button" id="btn-show-register" class="btn btn-outline" onclick="switchAuthMode('register')">Akkaawuntii Uumi</button>
+        </div>
+
+        <form onsubmit="handleAuthSubmit(event)">
+          <div id="field-name" class="form-group hidden">
+            <label for="auth-name">Maqaa Guutuu</label>
+            <input type="text" id="auth-name" placeholder="Maqaa keessan galchaa" />
+          </div>
+          <div class="form-group">
+            <label for="auth-email">Email</label>
+            <input type="email" id="auth-email" placeholder="example@gmail.com" required />
+          </div>
+          <div class="form-group">
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" placeholder="Password galchaa" required />
+          </div>
+          <button type="submit" id="auth-submit-btn" class="btn btn-primary" style="width:100%;justify-content:center;">Seeni</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-bottom:8px;">Qindaa'ina Supabase</h4>
         <div class="form-group">
           <label for="sb-url">Supabase Project URL</label>
           <input type="url" id="sb-url" placeholder="https://xxxx.supabase.co" />
         </div>
         <div class="form-group">
-          <label for="sb-key">Supabase Anon Public Key</label>
-          <input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+          <label for="sb-key">Supabase Anon Key</label>
+          <input type="text" id="sb-key" placeholder="eyJ..." />
         </div>
-        <button onclick="saveSupabaseConfig()" class="btn btn-primary btn-block">Supabase Wal-qabsiisi</button>
+        <button type="button" class="btn btn-success btn-sm" onclick="saveSupabaseConfig()">Qindaa'ina Ol-kaa'i</button>
       </div>
     </section>
   </main>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <button class="nav-item active" data-target="view-auth" onclick="navigateTo('view-auth')">
-      <span class="nav-icon">🔑</span>
-      <span>Seensa</span>
-    </button>
-    <button class="nav-item" data-target="view-feed" onclick="navigateTo('view-feed')">
-      <span class="nav-icon">📰</span>
-      <span>Feed</span>
-    </button>
-    <button class="nav-item" data-target="view-people" onclick="navigateTo('view-people')">
-      <span class="nav-icon">👥</span>
-      <span>Hiriyoota</span>
-    </button>
-    <button class="nav-item" data-target="view-chat" onclick="navigateTo('view-chat')">
-      <span class="nav-icon">💬</span>
-      <span>Chat</span>
-    </button>
-    <button class="nav-item" data-target="view-profile" onclick="navigateTo('view-profile')">
-      <span class="nav-icon">👤</span>
-      <span>Profile</span>
-    </button>
-  </nav>
+  <!-- PUBLIC PROFILE MODAL -->
+  <div id="public-profile-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closePublicProfile()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="pub-prof-name">Profile</h3>
+        <button type="button" class="btn btn-outline btn-sm" onclick="closePublicProfile()">✕ Cufi</button>
+      </div>
+      <div id="pub-prof-content"></div>
+    </div>
+  </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js"></script> <!-- Public Profile Viewer Modal -->
-<div id="public-profile-modal" class="card hidden" style="position:fixed;inset:16px;z-index:999;max-height:85vh;overflow:auto;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h3 id="pub-prof-name" style="margin:0;">Profile</h3>
-    <button type="button" class="btn btn-outline btn-sm" onclick="closePublicProfile()">✕ Cufi</button>
-  </div>
-  <div id="pub-prof-content"></div>
-</div>
+
+  <nav class="bottom-nav">
+    <button type="button" class="nav-item active" data-target="view-feed" onclick="navigateTo('view-feed')">📰 Feed</button>
+    <button type="button" class="nav-item" data-target="view-people" onclick="navigateTo('view-people')">👥 People</button>
+    <button type="button" class="nav-item" data-target="view-chat" onclick="navigateTo('view-chat')">💬 Chat</button>
+    <button type="button" class="nav-item" data-target="view-auth" onclick="navigateTo('view-auth')">👤 Profile</button>
+  </nav>
+
+  <script src="./app.js"></script>
 </body>
 </html>
