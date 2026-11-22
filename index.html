@@ -4,32 +4,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
-  <title>Nesru Michael — Social Feed, Friends & Live Chat</title>
+  <title>Nesru Michael — Social Network, Friends & Live Chat</title>
   <link rel="manifest" href="./manifest.json" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f1f5f9;
+      background: #f0f2f5;
       color: #0f172a;
-      padding-bottom: 76px;
+      padding-bottom: 78px;
     }
+    body.dark-mode { background: #0b1120; color: #f1f5f9; }
+    body.dark-mode .card,
+    body.dark-mode .post-card,
+    body.dark-mode .person-card,
+    body.dark-mode .modal-card,
+    body.dark-mode .site-footer,
+    body.dark-mode .bottom-nav { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+    body.dark-mode input,
+    body.dark-mode textarea,
+    body.dark-mode select,
+    body.dark-mode .comments-box,
+    body.dark-mode .chat-messages,
+    body.dark-mode .stat-box { background: #0f172a; color: #f1f5f9; border-color: #334155; }
+
     .hidden { display: none !important; }
 
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 20;
+      z-index: 25;
       background: #0f172a;
       color: #fff;
-      padding: 12px 16px;
+      padding: 11px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+    .brand-wrap { display: flex; align-items: center; gap: 8px; }
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
     }
     .brand { font-weight: 800; font-size: 16px; letter-spacing: 0.2px; }
+    .top-actions { display: flex; align-items: center; gap: 6px; }
     .badge {
       font-size: 11px;
       padding: 4px 9px;
@@ -62,7 +91,7 @@
       font-size: 14px;
       background: #fff;
     }
-    textarea { min-height: 84px; resize: vertical; }
+    textarea { min-height: 80px; resize: vertical; }
 
     .btn {
       border: none;
@@ -77,6 +106,7 @@
     }
     .btn-primary { background: #2563eb; color: #fff; }
     .btn-success { background: #16a34a; color: #fff; }
+    .btn-danger { background: #dc2626; color: #fff; }
     .btn-outline { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
     .btn-sm { padding: 6px 10px; font-size: 12px; }
 
@@ -99,8 +129,8 @@
     .post-author-info { display: flex; align-items: center; gap: 10px; }
     .avatar-sm {
       position: relative;
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: #0f172a;
       color: #fff;
@@ -110,18 +140,26 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: visible;
+    }
+    .avatar-sm img, .avatar-lg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
     }
     .avatar-lg {
-      width: 54px;
-      height: 54px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
-      background: #0f172a;
+      background: #2563eb;
       color: #fff;
       font-weight: 800;
-      font-size: 18px;
+      font-size: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
     .presence-pin {
       position: absolute;
@@ -138,7 +176,7 @@
 
     .post-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
     .post-body { font-size: 14px; line-height: 1.5; margin-bottom: 8px; white-space: pre-wrap; }
-    .post-img { width: 100%; max-height: 360px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
+    .post-img { width: 100%; max-height: 380px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
 
     .post-actions {
       display: flex;
@@ -162,7 +200,7 @@
     .action-btn.liked { color: #2563eb; background: #eff6ff; }
 
     .comments-box { background: #f8fafc; border-radius: 8px; padding: 8px; }
-    .comment-item { font-size: 13px; padding: 4px 0; border-bottom: 1px solid #e2e8f0; }
+    .comment-item { font-size: 13px; padding: 5px 0; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; gap: 6px; }
     .comment-item:last-of-type { border-bottom: none; }
     .comment-form { display: flex; gap: 6px; margin-top: 8px; }
 
@@ -209,10 +247,71 @@
     .stat-box { background: #f8fafc; border-radius: 8px; padding: 10px; }
     .stat-num { font-size: 18px; font-weight: 800; }
 
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .menu-grid .btn { justify-content: flex-start; }
+
+    /* SITE FOOTER WITH COPYRIGHT & SOCIAL LINKS */
+    .site-footer {
+      max-width: 720px;
+      margin: 16px auto 10px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      font-size: 13px;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .footer-links button {
+      background: none;
+      border: none;
+      color: #2563eb;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .social-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .social-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #fff;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .copyright-line {
+      color: #64748b;
+      font-size: 12px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 10px;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.65);
+      background: rgba(15, 23, 42, 0.68);
       z-index: 60;
       display: flex;
       align-items: center;
@@ -222,8 +321,8 @@
     .modal-card {
       background: #fff;
       width: 100%;
-      max-width: 520px;
-      max-height: 85vh;
+      max-width: 540px;
+      max-height: 86vh;
       overflow-y: auto;
       border-radius: 14px;
       padding: 16px;
@@ -251,6 +350,7 @@
       grid-template-columns: repeat(4, 1fr);
     }
     .nav-item {
+      position: relative;
       background: transparent;
       border: none;
       padding: 9px 4px;
@@ -260,11 +360,19 @@
       cursor: pointer;
     }
     .nav-item.active { color: #2563eb; background: #eff6ff; }
+    .nav-badge {
+      background: #dc2626;
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 999px;
+      margin-left: 3px;
+    }
 
     .toast {
       position: fixed;
       left: 50%;
-      bottom: 72px;
+      bottom: 74px;
       transform: translateX(-50%) translateY(20px);
       background: #0f172a;
       color: #fff;
@@ -284,8 +392,14 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">Nesru Michael</div>
-    <span id="cloud-badge" class="badge badge-local">Local Mode</span>
+    <div class="brand-wrap">
+      <div class="brand-logo">NM</div>
+      <div class="brand">Nesru Michael</div>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="btn btn-sm btn-outline" onclick="openInfoModal('settings')" title="Settings">⚙️</button>
+      <span id="cloud-badge" class="badge badge-local">Local Mode</span>
+    </div>
   </header>
 
   <main class="container">
@@ -298,8 +412,8 @@
             <div class="muted">Akka: <span id="feed-user-tag">Seenaa (Guest)</span></div>
           </div>
           <div class="filter-btns">
-            <button type="button" id="filter-all" class="btn btn-sm btn-outline active" onclick="setFeedFilter('all')">Hundaa</button>
-            <button type="button" id="filter-following" class="btn btn-sm btn-outline" onclick="setFeedFilter('following')">Following</button>
+            <button type="button" id="filter-all" class="btn btn-sm btn-outline active" onclick="setFeedFilter('all')">🌍 Hundaa</button>
+            <button type="button" id="filter-following" class="btn btn-sm btn-outline" onclick="setFeedFilter('following')">👥 Following</button>
           </div>
         </div>
 
@@ -313,7 +427,7 @@
           <div class="form-group">
             <input type="url" id="post-image" placeholder="Linkii suuraa (https://...) - filannoo" />
           </div>
-          <button type="submit" class="btn btn-primary">Maxxansi</button>
+          <button type="submit" class="btn btn-primary">📤 Maxxansi</button>
         </form>
       </div>
 
@@ -323,7 +437,7 @@
     <!-- PEOPLE VIEW -->
     <section id="view-people" class="view">
       <div class="card">
-        <h3 style="margin-bottom:8px;">Namoota (People & Friends)</h3>
+        <h3 style="margin-bottom:8px;">Namoota & Hiriyoota (People)</h3>
         <input type="search" id="people-search" placeholder="Maqaa ykn email barbaadi..." oninput="renderPeople()" />
       </div>
 
@@ -358,14 +472,15 @@
       </div>
     </section>
 
-    <!-- PROFILE & AUTH VIEW -->
+    <!-- PROFILE, AUTH & SETTINGS MENU VIEW -->
     <section id="view-auth" class="view">
       <div class="card">
         <div style="display:flex;align-items:center;gap:12px;">
           <div id="profile-avatar" class="avatar-lg">NM</div>
-          <div>
+          <div style="flex:1;">
             <h3 id="profile-name">Nesru Michael</h3>
             <div id="profile-email" class="muted">nesrumichael@gmail.com</div>
+            <div id="profile-bio-preview" class="muted" style="margin-top:3px;"></div>
           </div>
         </div>
 
@@ -384,12 +499,33 @@
           </div>
         </div>
 
-        <button type="button" class="btn btn-outline btn-sm" onclick="handleLogout()">Ba'i (Logout)</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="toggleEditProfileBox()">✏️ Profile & Bio Gulaali</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="handleLogout()">🚪 Ba'i (Logout)</button>
+        </div>
+
+        <!-- EDIT PROFILE & BIO FORM -->
+        <form id="edit-profile-form" class="hidden" style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:12px;" onsubmit="handleSaveProfileDetails(event)">
+          <div class="form-group">
+            <label for="edit-prof-name">Maqaa Guutuu</label>
+            <input type="text" id="edit-prof-name" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-prof-bio">Bio (Waa'ee Kee)</label>
+            <textarea id="edit-prof-bio" placeholder="Waa'ee kee gabaabsii barreessi..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="edit-prof-avatar">Linkii Suuraa Profile (Avatar URL - filannoo)</label>
+            <input type="url" id="edit-prof-avatar" placeholder="https://..." />
+          </div>
+          <button type="submit" class="btn btn-success btn-sm">💾 Jijjiirama Ol-kaa'i</button>
+        </form>
       </div>
 
+      <!-- LOGIN / REGISTER CARD -->
       <div class="card">
         <div class="auth-tabs">
-          <button type="button" id="btn-show-login" class="btn btn-outline active" onclick="switchAuthMode('login')">Seeni</button>
+          <button type="button" id="btn-show-login" class="btn btn-outline active" onclick="switchAuthMode('login')">Seeni (Login)</button>
           <button type="button" id="btn-show-register" class="btn btn-outline" onclick="switchAuthMode('register')">Akkaawuntii Uumi</button>
         </div>
 
@@ -410,8 +546,24 @@
         </form>
       </div>
 
+      <!-- MENU: SETTINGS, ABOUT, PRIVACY, TERMS, TRANSPARENCY, CONTACT, SUPPORT -->
       <div class="card">
-        <h4 style="margin-bottom:8px;">Qindaa'ina Supabase</h4>
+        <h4 style="margin-bottom:4px;">Menu Odeeffannoo, Seera & Deeggarsaa</h4>
+        <p class="muted">Fuulaalee seeraa, iftoominaa fi deeggarsa Nesru Michael ilaaluuf cuqaasaa:</p>
+        <div class="menu-grid">
+          <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('settings')">⚙️ Settings</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('about')">ℹ️ About</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('privacy')">🔒 Privacy Policy</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('terms')">📄 Terms</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('transparency')">🔍 Transparency</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('contact')">✉️ Contact</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('support')">🎧 Support</button>
+        </div>
+      </div>
+
+      <!-- SUPABASE CONFIG -->
+      <div class="card">
+        <h4 style="margin-bottom:8px;">Qindaa'ina Supabase Cloud</h4>
         <div class="form-group">
           <label for="sb-url">Supabase Project URL</label>
           <input type="url" id="sb-url" placeholder="https://xxxx.supabase.co" />
@@ -423,6 +575,33 @@
         <button type="button" class="btn btn-success btn-sm" onclick="saveSupabaseConfig()">Qindaa'ina Ol-kaa'i</button>
       </div>
     </section>
+
+    <!-- FOOTER: LEGAL LINKS, SOCIAL MEDIA BUTTONS & NESRU MICHAEL COPYRIGHT -->
+    <footer class="site-footer">
+      <div class="footer-links">
+        <button type="button" onclick="openInfoModal('about')">About</button>
+        <button type="button" onclick="openInfoModal('settings')">Settings</button>
+        <button type="button" onclick="openInfoModal('privacy')">Privacy Policy</button>
+        <button type="button" onclick="openInfoModal('terms')">Terms</button>
+        <button type="button" onclick="openInfoModal('transparency')">Transparency</button>
+        <button type="button" onclick="openInfoModal('contact')">Contact</button>
+        <button type="button" onclick="openInfoModal('support')">Support</button>
+      </div>
+
+      <div class="social-row">
+        <a class="social-pill" href="https://nesru.dev" target="_blank" rel="noopener">🌐 Website</a>
+        <a class="social-pill" href="https://t.me/" target="_blank" rel="noopener">✈️ Telegram</a>
+        <a class="social-pill" href="https://facebook.com/" target="_blank" rel="noopener">📘 Facebook</a>
+        <a class="social-pill" href="https://youtube.com/" target="_blank" rel="noopener">▶️ YouTube</a>
+        <a class="social-pill" href="https://github.com/rammis-nas" target="_blank" rel="noopener">💻 GitHub</a>
+        <a class="social-pill" href="mailto:nesrumichael@gmail.com">✉️ Email</a>
+      </div>
+
+      <div class="copyright-line">
+        <strong>&copy; 2026 Nesru Michael.</strong> Mirgi hundinuu seeraan eegamaadha (All Rights Reserved).<br />
+        Developed &amp; Maintained by <strong>Nesru Michael</strong> • <a href="mailto:nesrumichael@gmail.com">nesrumichael@gmail.com</a>
+      </div>
+    </footer>
   </main>
 
   <!-- PUBLIC PROFILE MODAL -->
@@ -436,15 +615,26 @@
     </div>
   </div>
 
+  <!-- INFO, LEGAL, SETTINGS & SUPPORT MODAL -->
+  <div id="info-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeInfoModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="info-modal-title">Odeeffannoo</h3>
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeInfoModal()">✕ Cufi</button>
+      </div>
+      <div id="info-modal-body" style="font-size:14px;line-height:1.6;"></div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <nav class="bottom-nav">
     <button type="button" class="nav-item active" data-target="view-feed" onclick="navigateTo('view-feed')">📰 Feed</button>
-    <button type="button" class="nav-item" data-target="view-people" onclick="navigateTo('view-people')">👥 People</button>
+    <button type="button" class="nav-item" data-target="view-people" onclick="navigateTo('view-people')">👥 People <span id="req-badge" class="nav-badge hidden">0</span></button>
     <button type="button" class="nav-item" data-target="view-chat" onclick="navigateTo('view-chat')">💬 Chat</button>
     <button type="button" class="nav-item" data-target="view-auth" onclick="navigateTo('view-auth')">👤 Profile</button>
   </nav>
 
   <script src="./app.js"></script>
 </body>
-</html>
+          </html>
