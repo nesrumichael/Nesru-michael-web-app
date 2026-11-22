@@ -1000,7 +1000,67 @@ function scrollChatToBottom() {
   if (box) box.scrollTop = box.scrollHeight;
 }
 
-function updateProfileStats() {
+function updateProfileStats() function openPublicProfile(email) {
+  if (!email) return;
+  const modal = document.getElementById('public-profile-modal');
+  const titleEl = document.getElementById('pub-prof-name');
+  const bodyEl = document.getElementById('pub-prof-content');
+  if (!modal || !titleEl || !bodyEl) return;
+
+  const prof = state.profiles.find((p) => p.email === email) || {};
+  const userPosts = state.posts.filter((p) => p.author_email === email);
+  const name = prof.full_name || (userPosts[0] && userPosts[0].author) || email.split('@')[0];
+  const bio = prof.bio || 'Odeeffannoon dabalataa hin galmaa’ine.';
+  const online = isUserOnline(email);
+
+  const followersCount = state.relationships.filter(
+    (r) => r.receiver_email === email && r.rel_type === 'follow'
+  ).length;
+  const friendsCount = state.relationships.filter(
+    (r) =>
+      r.rel_type === 'friend' &&
+      r.status === 'accepted' &&
+      (r.sender_email === email || r.receiver_email === email)
+  ).length;
+
+  titleEl.textContent = name;
+  bodyEl.innerHTML = `
+    <p class="muted">${escapeHtml(email)}</p>
+    <p>${online ? '<span style="color:#16a34a;font-weight:700;">● Online amma</span>' : 'Offline'}</p>
+    <p style="margin:8px 0;"><strong>Bio:</strong> ${escapeHtml(bio)}</p>
+    <div style="display:flex;gap:12px;margin:10px 0;font-size:14px;">
+      <span><strong>${userPosts.length}</strong> Posts</span>
+      <span><strong>${followersCount}</strong> Followers</span>
+      <span><strong>${friendsCount}</strong> Friends</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="closePublicProfile(); toggleFollow('${escapeHtml(email)}')">+ Follow</button>
+      <button type="button" class="btn btn-outline btn-sm" onclick="closePublicProfile(); openDirectChat('${escapeHtml(email)}')">💬 Chat</button>
+    </div>
+    <hr />
+    <h4>Barreeffamoota (${userPosts.length})</h4>
+    ${
+      userPosts.length
+        ? userPosts
+            .map(
+              (p) => `
+              <div style="border-bottom:1px solid #eee;padding:8px 0;">
+                <strong>${escapeHtml(p.title)}</strong>
+                <p style="margin:4px 0;font-size:14px;">${escapeHtml(p.body)}</p>
+              </div>`
+            )
+            .join('')
+        : '<p class="muted">Barreeffama hin maxxansine.</p>'
+    }
+  `;
+
+  modal.classList.remove('hidden');
+}
+
+function closePublicProfile() {
+  const modal = document.getElementById('public-profile-modal');
+  if (modal) modal.classList.add('hidden');
+}) {
   if (!currentUser) return;
   const myPosts = state.posts.filter((p) => p.author_email === currentUser.email).length;
   const followers = state.relationships.filter(
