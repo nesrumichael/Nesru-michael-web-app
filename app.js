@@ -1328,3 +1328,27 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
     }
+// ==========================================================
+// AUTH CARD VISIBILITY AFTER LOGIN / REGISTER (APPEND AT END)
+// ==========================================================
+function syncAuthCardVisibility() {
+  const authBoxCard = document.getElementById('auth-box-card');
+  if (!authBoxCard) return;
+  const activeUser =
+    typeof currentUser !== 'undefined' && currentUser
+      ? currentUser
+      : JSON.parse(localStorage.getItem('nesru_current_user') || 'null');
+  authBoxCard.classList.toggle('hidden', Boolean(activeUser));
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(syncAuthCardVisibility, 120);
+});
+
+document.addEventListener('click', () => {
+  setTimeout(syncAuthCardVisibility, 150);
+});
+
+document.addEventListener('submit', () => {
+  setTimeout(syncAuthCardVisibility, 250);
+});
