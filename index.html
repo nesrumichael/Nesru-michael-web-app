@@ -202,6 +202,13 @@
   </nav>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js"></script>
+  <script src="app.js"></script> <!-- Public Profile Viewer Modal -->
+<div id="public-profile-modal" class="card hidden" style="position:fixed;inset:16px;z-index:999;max-height:85vh;overflow:auto;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h3 id="pub-prof-name" style="margin:0;">Profile</h3>
+    <button type="button" class="btn btn-outline btn-sm" onclick="closePublicProfile()">✕ Cufi</button>
+  </div>
+  <div id="pub-prof-content"></div>
+</div>
 </body>
 </html>
