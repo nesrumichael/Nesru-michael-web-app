@@ -1000,7 +1000,7 @@ function scrollChatToBottom() {
   if (box) box.scrollTop = box.scrollHeight;
 }
 
-function updateProfileStats() function openPublicProfile(email) {
+function updateProfileStats(function openPublicProfile(email) {
   if (!email) return;
   const modal = document.getElementById('public-profile-modal');
   const titleEl = document.getElementById('pub-prof-name');
