@@ -356,7 +356,7 @@ async function loadComments() {
   } else {
     state.comments = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMMENTS) || '[]');
   }
-  renderFeed();
+  renderFeed(<strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(post.author_email)}')">${escapeHtml(post.author)}</strong>);
 }
 
 async function loadRelationships() {
