@@ -324,7 +324,7 @@ async function loadProfiles() {
     }
   }
   updateChatTargetOptions();
-  renderPeople();
+  renderPeople(<strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(post.author_email)}')">${escapeHtml(post.author)}</strong>);
   updateProfileStats();
 }
 
