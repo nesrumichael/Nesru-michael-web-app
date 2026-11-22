@@ -53,6 +53,7 @@ function registerSW() {
 
 function showToast(msg) {
   const el = document.getElementById('toast');
+  if (!el) return;
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(window._toastTimer);
@@ -75,8 +76,10 @@ function navigateTo(viewId) {
 }
 
 function loadSupabaseConfigInputs() {
-  document.getElementById('sb-url').value = localStorage.getItem(STORAGE_KEYS.SB_URL) || '';
-  document.getElementById('sb-key').value = localStorage.getItem(STORAGE_KEYS.SB_KEY) || '';
+  const urlEl = document.getElementById('sb-url');
+  const keyEl = document.getElementById('sb-key');
+  if (urlEl) urlEl.value = localStorage.getItem(STORAGE_KEYS.SB_URL) || '';
+  if (keyEl) keyEl.value = localStorage.getItem(STORAGE_KEYS.SB_KEY) || '';
 }
 
 function saveSupabaseConfig() {
@@ -103,18 +106,24 @@ function initSupabase() {
   if (url && key && window.supabase) {
     try {
       supabaseClient = window.supabase.createClient(url, key);
-      badge.textContent = 'Supabase Cloud';
-      badge.className = 'badge badge-cloud';
+      if (badge) {
+        badge.textContent = 'Supabase Cloud';
+        badge.className = 'badge badge-cloud';
+      }
       setupRealtimeSubscriptions();
     } catch (e) {
       supabaseClient = null;
-      badge.textContent = 'Local Mode';
-      badge.className = 'badge badge-local';
+      if (badge) {
+        badge.textContent = 'Local Mode';
+        badge.className = 'badge badge-local';
+      }
     }
   } else {
     supabaseClient = null;
-    badge.textContent = 'Local Mode';
-    badge.className = 'badge badge-local';
+    if (badge) {
+      badge.textContent = 'Local Mode';
+      badge.className = 'badge badge-local';
+    }
   }
 }
 
@@ -131,6 +140,11 @@ async function handleAuthSubmit(e) {
   const name = document.getElementById('auth-name').value.trim();
   const email = document.getElementById('auth-email').value.trim().toLowerCase();
   const password = document.getElementById('auth-password').value;
+
+  if (!email) {
+    showToast('Maaloo email galchaa.');
+    return;
+  }
 
   if (authMode === 'register' && !name) {
     showToast('Maaloo maqaa guutuu galchaa.');
@@ -198,10 +212,15 @@ function updateUserUI() {
   const email = currentUser ? currentUser.email : 'nesrumichael@gmail.com';
   const initials = getInitials(name);
 
-  document.getElementById('profile-avatar').textContent = initials;
-  document.getElementById('profile-name').textContent = name;
-  document.getElementById('profile-email').textContent = email;
-  document.getElementById('feed-user-tag').textContent = currentUser ? currentUser.name : 'Seenaa (Guest)';
+  const avatarEl = document.getElementById('profile-avatar');
+  const nameEl = document.getElementById('profile-name');
+  const emailEl = document.getElementById('profile-email');
+  const tagEl = document.getElementById('feed-user-tag');
+
+  if (avatarEl) avatarEl.textContent = initials;
+  if (nameEl) nameEl.textContent = name;
+  if (emailEl) emailEl.textContent = email;
+  if (tagEl) tagEl.textContent = currentUser ? currentUser.name : 'Seenaa (Guest)';
 }
 
 function getInitials(name) {
@@ -319,12 +338,12 @@ async function loadProfiles() {
     state.profiles = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROFILES) || '[]');
     if (state.profiles.length === 0) {
       state.profiles = [
-        { email: 'nesrumichael@gmail.com', full_name: 'Nesru Michael', last_seen: new Date().toISOString() }
+        { email: 'nesrumichael@gmail.com', full_name: 'Nesru Michael', bio: '', last_seen: new Date().toISOString() }
       ];
     }
   }
   updateChatTargetOptions();
-  renderPeople(<strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(post.author_email)}')">${escapeHtml(post.author)}</strong>);
+  renderPeople();
   updateProfileStats();
 }
 
@@ -356,7 +375,7 @@ async function loadComments() {
   } else {
     state.comments = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMMENTS) || '[]');
   }
-  renderFeed(<strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(post.author_email)}')">${escapeHtml(post.author)}</strong>);
+  renderFeed();
 }
 
 async function loadRelationships() {
@@ -582,12 +601,12 @@ function renderFeed() {
         <article class="post-card">
           <div class="post-header">
             <div class="post-author-info">
-              <div class="avatar-sm">
+              <div class="avatar-sm" style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(post.author_email)}')">
                 ${escapeHtml(getInitials(post.author))}
                 <span class="presence-pin ${online ? 'dot-online' : 'dot-offline'}"></span>
               </div>
               <div>
-                <strong>${escapeHtml(post.author)}</strong>
+                <strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(post.author_email)}')">${escapeHtml(post.author)}</strong>
                 <div class="status-sub">
                   ${online ? '<span style="color:#16a34a;font-weight:700;">● Online</span>' : 'Offline'}
                   • ${formatTime(post.created_at)}
@@ -629,7 +648,7 @@ function renderFeed() {
               .map(
                 (c) => `
                 <div class="comment-item">
-                  <strong>${escapeHtml(c.author_name)}:</strong> ${escapeHtml(c.comment_text)}
+                  <strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(c.author_email)}')">${escapeHtml(c.author_name)}:</strong> ${escapeHtml(c.comment_text)}
                 </div>`
               )
               .join('')}
@@ -751,7 +770,7 @@ function renderPeople() {
 
   const query = (document.getElementById('people-search')?.value || '').toLowerCase();
 
-  if (currentUser) {
+  if (currentUser && reqBox && reqList) {
     const incoming = state.relationships.filter(
       (r) => r.receiver_email === currentUser.email && r.rel_type === 'friend' && r.status === 'pending'
     );
@@ -764,7 +783,7 @@ function renderPeople() {
           return `
             <div class="person-card">
               <div>
-                <strong>${escapeHtml(sName)}</strong>
+                <strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(r.sender_email)}')">${escapeHtml(sName)}</strong>
                 <div class="muted">${escapeHtml(r.sender_email)}</div>
               </div>
               <button class="btn btn-success btn-sm" onclick="acceptFriendRequest('${escapeHtml(r.id)}')">✓ Accept Friend</button>
@@ -775,7 +794,7 @@ function renderPeople() {
     } else {
       reqBox.classList.add('hidden');
     }
-  } else {
+  } else if (reqBox) {
     reqBox.classList.add('hidden');
   }
 
@@ -789,7 +808,7 @@ function renderPeople() {
 
   const people = Array.from(map.values()).filter((p) => {
     if (currentUser && p.email === currentUser.email) return false;
-    return p.full_name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query);
+    return (p.full_name || '').toLowerCase().includes(query) || (p.email || '').toLowerCase().includes(query);
   });
 
   if (people.length === 0) {
@@ -826,12 +845,12 @@ function renderPeople() {
       return `
         <div class="person-card">
           <div class="post-author-info">
-            <div class="avatar-sm">
+            <div class="avatar-sm" style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(p.email)}')">
               ${escapeHtml(getInitials(p.full_name))}
               <span class="presence-pin ${online ? 'dot-online' : 'dot-offline'}"></span>
             </div>
             <div>
-              <strong>${escapeHtml(p.full_name)}</strong>
+              <strong style="cursor:pointer;" onclick="openPublicProfile('${escapeHtml(p.email)}')">${escapeHtml(p.full_name)}</strong>
               <div class="status-sub">
                 ${online ? '<span style="color:#16a34a;font-weight:700;">● Online</span>' : 'Offline'}
               </div>
@@ -887,17 +906,19 @@ function switchChatTarget(targetEmail) {
   const statusEl = document.getElementById('chat-room-status');
 
   if (!targetEmail) {
-    titleEl.textContent = 'Chat Waliinii (Public Group)';
+    if (titleEl) titleEl.textContent = 'Chat Waliinii (Public Group)';
     const onlineCount = Math.max(1, state.profiles.filter((p) => isUserOnline(p.email)).length);
-    statusEl.innerHTML = `<span class="dot-online"></span> ${onlineCount} Online amma`;
+    if (statusEl) statusEl.innerHTML = `<span class="dot-online"></span> ${onlineCount} Online amma`;
   } else {
     const prof = state.profiles.find((p) => p.email === targetEmail);
     const name = prof ? prof.full_name : targetEmail;
     const online = isUserOnline(targetEmail);
-    titleEl.textContent = name;
-    statusEl.innerHTML = online
-      ? `<span class="dot-online"></span> <strong style="color:#16a34a;">Online amma</strong>`
-      : `<span class="dot-offline"></span> Offline`;
+    if (titleEl) titleEl.textContent = name;
+    if (statusEl) {
+      statusEl.innerHTML = online
+        ? `<span class="dot-online"></span> <strong style="color:#16a34a;">Online amma</strong>`
+        : `<span class="dot-offline"></span> Offline`;
+    }
   }
 
   renderChat();
@@ -1000,7 +1021,29 @@ function scrollChatToBottom() {
   if (box) box.scrollTop = box.scrollHeight;
 }
 
-function updateProfileStats(function openPublicProfile(email) {
+function updateProfileStats() {
+  if (!currentUser) return;
+  const myPosts = state.posts.filter((p) => p.author_email === currentUser.email).length;
+  const followers = state.relationships.filter(
+    (r) => r.receiver_email === currentUser.email && r.rel_type === 'follow'
+  ).length;
+  const friends = state.relationships.filter(
+    (r) =>
+      r.rel_type === 'friend' &&
+      r.status === 'accepted' &&
+      (r.sender_email === currentUser.email || r.receiver_email === currentUser.email)
+  ).length;
+
+  const postsEl = document.getElementById('stat-posts');
+  const followersEl = document.getElementById('stat-followers');
+  const friendsEl = document.getElementById('stat-friends');
+
+  if (postsEl) postsEl.textContent = myPosts;
+  if (followersEl) followersEl.textContent = followers;
+  if (friendsEl) friendsEl.textContent = friends;
+}
+
+function openPublicProfile(email) {
   if (!email) return;
   const modal = document.getElementById('public-profile-modal');
   const titleEl = document.getElementById('pub-prof-name');
@@ -1060,22 +1103,6 @@ function updateProfileStats(function openPublicProfile(email) {
 function closePublicProfile() {
   const modal = document.getElementById('public-profile-modal');
   if (modal) modal.classList.add('hidden');
-}) {
-  if (!currentUser) return;
-  const myPosts = state.posts.filter((p) => p.author_email === currentUser.email).length;
-  const followers = state.relationships.filter(
-    (r) => r.receiver_email === currentUser.email && r.rel_type === 'follow'
-  ).length;
-  const friends = state.relationships.filter(
-    (r) =>
-      r.rel_type === 'friend' &&
-      r.status === 'accepted' &&
-      (r.sender_email === currentUser.email || r.receiver_email === currentUser.email)
-  ).length;
-
-  document.getElementById('stat-posts').textContent = myPosts;
-  document.getElementById('stat-followers').textContent = followers;
-  document.getElementById('stat-friends').textContent = friends;
 }
 
 function formatTime(iso) {
@@ -1092,4 +1119,4 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-    }
+  }
