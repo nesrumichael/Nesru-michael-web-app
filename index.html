@@ -1721,6 +1721,208 @@
     }
   });
 })();
-          </script>
+          </script><!-- ==========================================================
+     NESRU MICHAEL SUPABASE INSIDE/WITH LOGIN SCREEN (BEFORE </body>)
+     ========================================================== -->
+<style id="nm-login-with-sb-style">
+  #nm-login-sb-panel {
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    font-size: 12px;
+    text-align: left;
+  }
+  .nm-login-sb-line {
+    margin-bottom: 5px;
+    word-break: break-all;
+  }
+  .nm-login-sb-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+</style>
+
+<script>
+(function () {
+  const NM_FINAL_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
+  const NM_FINAL_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2d2trZXFpY2VqZnVxY3pjbGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDkyMDMsImV4cCI6MjExMDY4NTIwM30.QzR4DDlBlfQva6hQWtdyXXZK1PCnBCT73XAifwVbMSs";
+
+  localStorage.setItem("nm_custom_supabase_url", NM_FINAL_URL);
+  localStorage.setItem("nm_custom_supabase_anon_key", NM_FINAL_KEY);
+  localStorage.setItem("supabase_anon_key", NM_FINAL_KEY);
+  localStorage.setItem("nm_sb_key", NM_FINAL_KEY);
+
+  function nmGetBoundClient() {
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      if (!window.supabaseClient || !window.supabaseClient.auth) {
+        window.supabaseClient = window.supabase.createClient(NM_FINAL_URL, NM_FINAL_KEY);
+      }
+      window.sb = window.supabaseClient;
+      window._supabase = window.supabaseClient;
+      return window.supabaseClient;
+    }
+    return null;
+  }
+
+  function nmAttachPanelToLoginCard() {
+    if (document.getElementById("nm-login-sb-panel")) return;
+
+    const gateBox =
+      document.querySelector("#nm-auth-gate .nm-auth-box") ||
+      document.querySelector("#nm-auth-gate-screen .nm-gate-card") ||
+      document.getElementById("nm-auth-gate") ||
+      document.body;
+
+    const panel = document.createElement("div");
+    panel.id = "nm-login-sb-panel";
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+        <strong>🗄️ Supabase Status</strong>
+        <span id="nm-login-sb-badge" style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">Ready</span>
+      </div>
+      <div class="nm-login-sb-line"><strong>URL:</strong> ${NM_FINAL_URL}</div>
+      <div class="nm-login-sb-line"><strong>Anon Key:</strong> ${NM_FINAL_KEY.slice(0, 16)}...${NM_FINAL_KEY.slice(-10)}</div>
+      <div class="nm-login-sb-line"><strong>Haala:</strong> <span id="nm-login-sb-state">Qoraa jira...</span></div>
+      <div class="nm-login-sb-btns">
+        <button type="button" class="btn btn-primary btn-sm" onclick="nmRefreshLoginSb()">🔄 Haaromsi</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="nmCheckLoginSbTables()">📊 Tables Qori</button>
+      </div>
+    `;
+
+    gateBox.appendChild(panel);
+  }
+
+  function nmPatchGateFormDirectly() {
+    const form = document.getElementById("gate-auth-form");
+    if (!form || form.dataset.nmPatched === "1") return;
+    form.dataset.nmPatched = "1";
+
+    form.addEventListener(
+      "submit",
+      async function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        const msgEl = document.getElementById("gate-msg");
+        const emailEl = document.getElementById("gate-email");
+        const passEl = document.getElementById("gate-password");
+        const nameEl = document.getElementById("gate-name");
+        const btnEl = document.getElementById("gate-submit-btn");
+
+        const email = emailEl ? emailEl.value.trim() : "";
+        const password = passEl ? passEl.value : "";
+        const fullName = nameEl ? nameEl.value.trim() : "";
+        const isSignup = Boolean(btnEl && /sign up|uumi/i.test(btnEl.textContent || ""));
+
+        const client = nmGetBoundClient();
+        if (!client || !client.auth) {
+          if (msgEl) msgEl.textContent = "Supabase JS hin fe'amne. Fuula refresh godhi.";
+          return;
+        }
+        if (!email || !password) {
+          if (msgEl) msgEl.textContent = "Email fi Password guuti.";
+          return;
+        }
+
+        if (msgEl) msgEl.textContent = isSignup ? "Account uumaa jira..." : "Seenaa jira...";
+
+        try {
+          if (isSignup) {
+            const { data, error } = await client.auth.signUp({
+              email,
+              password,
+              options: { data: { full_name: fullName || email.split("@")[0] } }
+            });
+            if (error) {
+              if (msgEl) msgEl.textContent = "Dogoggora Sign Up: " + error.message;
+              return;
+            }
+            if (data && data.session && data.session.user) {
+              nmOnLoggedIn(data.session.user);
+            } else {
+              if (msgEl) msgEl.textContent = "Account uumameera! Amma 'Seeni (Login)' tuqii seeni.";
+            }
+          } else {
+            const { data, error } = await client.auth.signInWithPassword({ email, password });
+            if (error) {
+              if (msgEl) msgEl.textContent = "Dogoggora Sign In: " + error.message;
+              return;
+            }
+            if (data && data.user) {
+              nmOnLoggedIn(data.user);
+            }
+          }
+        } catch (err) {
+          if (msgEl) msgEl.textContent = "Rakkoon uumame: " + (err.message || err);
+        }
+      },
+      true
+    );
+  }
+
+  function nmOnLoggedIn(user) {
+    const gate = document.getElementById("nm-auth-gate");
+    if (gate) gate.classList.add("hidden");
+    document.body.style.overflow = "";
+    const tag = document.getElementById("feed-user-tag");
+    if (tag && user && user.email) tag.textContent = user.email;
+    if (typeof loadPosts === "function") loadPosts();
+    if (typeof loadPeople === "function") loadPeople();
+  }
+
+  window.nmRefreshLoginSb = async function () {
+    const stateEl = document.getElementById("nm-login-sb-state");
+    const badgeEl = document.getElementById("nm-login-sb-badge");
+    const client = nmGetBoundClient();
+
+    if (!client || !client.auth) {
+      if (stateEl) stateEl.textContent = "Client hin fe'amne";
+      return;
+    }
+
+    const { data, error } = await client.auth.getSession();
+    if (error) {
+      if (stateEl) stateEl.textContent = "Error: " + error.message;
+      return;
+    }
+    const user = data && data.session ? data.session.user : null;
+    if (badgeEl) {
+      badgeEl.textContent = "Connected";
+      badgeEl.style.background = "#16a34a";
+    }
+    if (stateEl) {
+      stateEl.textContent = user ? "Seentaniirtu: " + user.email : "Connected (Hin seenamne)";
+    }
+    if (user) {
+      nmOnLoggedIn(user);
+    }
+  };
+
+  window.nmCheckLoginSbTables = async function () {
+    const stateEl = document.getElementById("nm-login-sb-state");
+    const client = nmGetBoundClient();
+    if (!client) return;
+    if (stateEl) stateEl.textContent = "Tables qoraa jira...";
+    const p1 = await client.from("profiles").select("id").limit(1);
+    const p2 = await client.from("posts").select("id").limit(1);
+    const s1 = p1.error ? "profiles: ❌ (" + p1.error.message + ")" : "profiles: ✅";
+    const s2 = p2.error ? "posts: ❌ (" + p2.error.message + ")" : "posts: ✅";
+    if (stateEl) stateEl.textContent = s1 + " | " + s2;
+  };
+
+  window.addEventListener("DOMContentLoaded", function () {
+    nmGetBoundClient();
+    nmAttachPanelToLoginCard();
+    nmPatchGateFormDirectly();
+    nmRefreshLoginSb();
+  });
+})();
+</script>
 </body>
   </html>
