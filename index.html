@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+8<!DOCTYPE html>
 <html lang="om">
 <head>
   <meta charset="UTF-8" />
@@ -1201,6 +1201,64 @@
     nmDrawBadgeIcon("nm-pwa-icon-192", 192);
     nmDrawBadgeIcon("nm-pwa-icon-512", 512);
   });
+})();
+</script> <!-- ==========================================================
+     NESRU MICHAEL HIDE SUPABASE UI (APPEND BEFORE </body>)
+     Keeps Supabase config/logic running while hiding UI cards/buttons
+     ========================================================== -->
+<style id="nm-hide-supabase-ui-style">
+  /* Qabduu "Supabase Cloud" gubbaa jiru dhoksuuf */
+  button[onclick*="supabase" i],
+  button[id*="supabase" i],
+  a[href*="supabase" i],
+  .supabase-btn,
+  #supabase-cloud-btn {
+    display: none !important;
+  }
+
+  /* Sanduuqa "Qindaa'ina Supabase Cloud" (URL & Anon Key) dhoksuuf */
+  #supabase-url,
+  #supabase-anon-key,
+  #supabase-key,
+  [id*="supabase-config" i],
+  [id*="supabase-settings" i],
+  [class*="supabase-config" i],
+  [class*="supabase-settings" i] {
+    display: none !important;
+  }
+</style>
+
+<script>
+(function () {
+  function nmHideSupabaseBlocks() {
+    // 1. Qabduu qofa kan "Supabase Cloud" jedhu dhoksuu
+    document.querySelectorAll("button, a").forEach((el) => {
+      const txt = (el.textContent || "").trim().toLowerCase();
+      if (txt === "supabase cloud" || txt === "qindaa'ina ol-kaa'i") {
+        // Yoo qabduun kun card qindaa'inaa keessa jiraate card sana dhoksa
+        const card = el.closest(".card, .box, .panel, .modal-card, section, div");
+        if (card && /qindaa'ina supabase cloud|supabase project url|supabase anon key/i.test(card.textContent || "")) {
+          card.style.setProperty("display", "none", "important");
+        } else {
+          el.style.setProperty("display", "none", "important");
+        }
+      }
+    });
+
+    // 2. Card guutuu kan "Qindaa'ina Supabase Cloud" qabu dhoksuu
+    document.querySelectorAll("div, section, article, .card").forEach((box) => {
+      const raw = (box.textContent || "");
+      const hasHeader = /qindaa'ina supabase cloud/i.test(raw);
+      const hasInputs = box.querySelector('input[placeholder*="supabase" i], input[value*="supabase.co" i], input[type="password"]');
+      if (hasHeader && hasInputs && box.children.length <= 8) {
+        box.style.setProperty("display", "none", "important");
+      }
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", nmHideSupabaseBlocks);
+  setTimeout(nmHideSupabaseBlocks, 300);
+  setTimeout(nmHideSupabaseBlocks, 1200);
 })();
 </script>
 </body>
