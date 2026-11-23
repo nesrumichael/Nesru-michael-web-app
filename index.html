@@ -988,6 +988,258 @@
         }
       });
     })();
-  </script>
+  </script><!-- ==========================================================
+     NESRU MICHAEL OWNER-ONLY SUPABASE ADMIN PANEL (BEFORE </body>)
+     ========================================================== -->
+<style id="nm-admin-panel-style">
+  #nm-admin-supabase-panel {
+    margin-top: 12px;
+    border: 2px solid #2563eb;
+    border-radius: 12px;
+    padding: 14px;
+    background: #eff6ff;
+    color: #0f172a;
+  }
+  body.dark-mode #nm-admin-supabase-panel {
+    background: #172554;
+    color: #f8fafc;
+    border-color: #60a5fa;
+  }
+  .nm-admin-hidden {
+    display: none !important;
+  }
+</style>
+
+<!-- ADMIN UNLOCK MODAL (ONLY WHEN OWNER WANTS TO OPEN ADMIN PANEL) -->
+<div id="nm-admin-unlock-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmCloseAdminUnlock()">
+  <div class="modal-card" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>🔐 Admin Unlock (Abbaa Web Qofa)</h3>
+      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseAdminUnlock()">✕ Cufi</button>
+    </div>
+    <p class="muted" style="margin-bottom:10px;">
+      Qindaa'ina Supabase sirreessuuf PIN / Admin Key galchi (default: <code>nesru2026</code> — yoo barbaadde koodii keessatti jijjiiri).
+    </p>
+    <div class="form-group">
+      <label for="nm-admin-pin-input">Admin PIN / Passcode</label>
+      <input type="password" id="nm-admin-pin-input" placeholder="Admin PIN galchi..." />
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="nmVerifyAdminPin()">🔓 Banadhu</button>
+    </div>
+    <div id="nm-admin-unlock-msg" class="muted" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // =========================================================================
+  // 1. QINDAA'INA ABBAAA WEEBSAAYITII (OWNER CONFIG)
+  //    Email kee fi Admin PIN asitti galchi (namoonni biroo hin argan)
+  // =========================================================================
+  const NM_OWNER_EMAILS = ["nesrumichael@gmail.com"];
+  const NM_ADMIN_PIN = "nesru2026";
+  const NM_ADMIN_UNLOCK_KEY = "nm_owner_admin_unlocked_v1";
+  const NM_SB_URL_KEY = "nm_custom_supabase_url";
+  const NM_SB_KEY_KEY = "nm_custom_supabase_anon_key";
+
+  function nmIsOwnerUnlocked() {
+    if (localStorage.getItem(NM_ADMIN_UNLOCK_KEY) === "1") return true;
+    try {
+      const u =
+        (typeof currentUser !== "undefined" && currentUser) ||
+        JSON.parse(localStorage.getItem("nesru_current_user") || "null");
+      const email = (u && u.email ? u.email : "").trim().toLowerCase();
+      if (email && NM_OWNER_EMAILS.map((e) => e.toLowerCase()).includes(email)) {
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function nmBuildAdminPanel() {
+    if (document.getElementById("nm-admin-supabase-panel")) return;
+
+    const targetContainer =
+      document.getElementById("view-auth") ||
+      document.querySelector("main.container") ||
+      document.body;
+
+    const savedUrl =
+      localStorage.getItem(NM_SB_URL_KEY) ||
+      "https://uvwkkeqicejfuqczclbt.supabase.co";
+    const savedKey =
+      localStorage.getItem(NM_SB_KEY_KEY) ||
+      localStorage.getItem("supabase_anon_key") ||
+      localStorage.getItem("nm_sb_key") ||
+      "";
+
+    const panel = document.createElement("div");
+    panel.id = "nm-admin-supabase-panel";
+    panel.className = nmIsOwnerUnlocked() ? "" : "nm-admin-hidden";
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <div>
+          <strong>🛠️ Admin Supabase Control (Ana Qofaaf)</strong>
+          <div class="muted">Yeroo barbaaddetti URL, Anon Key fi sistema haaraa asirraa sirreessi.</div>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="nmLockAdminPanel()">🔒 Cufii Dhoksi</button>
+      </div>
+
+      <div class="form-group">
+        <label for="nm-admin-sb-url">Supabase Project URL</label>
+        <input type="url" id="nm-admin-sb-url" value="${savedUrl.replace(/"/g, "&quot;")}" placeholder="https://xxxx.supabase.co" />
+      </div>
+
+      <div class="form-group">
+        <label for="nm-admin-sb-key">Supabase Anon Key</label>
+        <input type="password" id="nm-admin-sb-key" value="${savedKey.replace(/"/g, "&quot;")}" placeholder="eyJ..." />
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-success btn-sm" onclick="nmSaveAdminSupabase()">💾 Ol-kaa'i & Wal-qabsiisi</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="nmTestAdminSupabase()">🔌 Connection Mirkaneessi</button>
+      </div>
+
+      <div id="nm-admin-sb-status" class="muted" style="margin-top:8px;"></div>
+    `;
+
+    targetContainer.appendChild(panel);
+  }
+
+  function nmSyncAdminVisibility() {
+    const panel = document.getElementById("nm-admin-supabase-panel");
+    const unlocked = nmIsOwnerUnlocked();
+
+    if (panel) {
+      panel.classList.toggle("nm-admin-hidden", !unlocked);
+    }
+
+    // Qabduu / block Supabase kan namoota biroof mul'achuu danda'u dhoksuu
+    document.querySelectorAll("button, a, .card, section, div").forEach((el) => {
+      if (el.id === "nm-admin-supabase-panel" || el.closest("#nm-admin-supabase-panel")) return;
+      if (el.id === "nm-admin-unlock-modal" || el.closest("#nm-admin-unlock-modal")) return;
+      const txt = (el.textContent || "").trim().toLowerCase();
+      if (txt === "supabase cloud" && el.tagName !== "DIV" && el.tagName !== "SECTION") {
+        el.style.setProperty("display", unlocked ? "" : "none", "important");
+      }
+    });
+  }
+
+  function nmEnsureTopbarAdminTrigger() {
+    const topbar = document.querySelector(".topbar .top-actions") || document.querySelector(".topbar");
+    if (!topbar || document.getElementById("nm-owner-admin-btn")) return;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "nm-owner-admin-btn";
+    btn.className = "btn btn-sm btn-outline";
+    btn.title = "Admin Supabase";
+    btn.textContent = "🛠️";
+    btn.onclick = function () {
+      if (nmIsOwnerUnlocked()) {
+        nmBuildAdminPanel();
+        nmSyncAdminVisibility();
+        if (typeof navigateTo === "function") navigateTo("view-auth");
+        const p = document.getElementById("nm-admin-supabase-panel");
+        if (p) p.scrollIntoView({ behavior: "smooth" });
+      } else {
+        document.getElementById("nm-admin-unlock-msg").textContent = "";
+        document.getElementById("nm-admin-pin-input").value = "";
+        document.getElementById("nm-admin-unlock-modal").classList.remove("hidden");
+      }
+    };
+    topbar.appendChild(btn);
+  }
+
+  window.nmCloseAdminUnlock = function () {
+    const m = document.getElementById("nm-admin-unlock-modal");
+    if (m) m.classList.add("hidden");
+  };
+
+  window.nmVerifyAdminPin = function () {
+    const val = (document.getElementById("nm-admin-pin-input").value || "").trim();
+    const msg = document.getElementById("nm-admin-unlock-msg");
+    if (val === NM_ADMIN_PIN) {
+      localStorage.setItem(NM_ADMIN_UNLOCK_KEY, "1");
+      nmCloseAdminUnlock();
+      nmBuildAdminPanel();
+      nmSyncAdminVisibility();
+      if (typeof navigateTo === "function") navigateTo("view-auth");
+      if (typeof showToast === "function") showToast("Admin Panel banameera!");
+    } else {
+      msg.textContent = "PIN sirrii miti. Irra deebi'ii yaali.";
+    }
+  };
+
+  window.nmLockAdminPanel = function () {
+    localStorage.removeItem(NM_ADMIN_UNLOCK_KEY);
+    nmSyncAdminVisibility();
+    if (typeof showToast === "function") showToast("Admin Panel cufameera.");
+  };
+
+  window.nmSaveAdminSupabase = function () {
+    const url = (document.getElementById("nm-admin-sb-url").value || "").trim();
+    const key = (document.getElementById("nm-admin-sb-key").value || "").trim();
+    const statusEl = document.getElementById("nm-admin-sb-status");
+
+    if (!url || !key) {
+      statusEl.textContent = "Maaloo Project URL fi Anon Key lamaanuu guuti.";
+      return;
+    }
+
+    localStorage.setItem(NM_SB_URL_KEY, url);
+    localStorage.setItem(NM_SB_KEY_KEY, key);
+    localStorage.setItem("supabase_anon_key", key);
+    localStorage.setItem("nm_sb_key", key);
+
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      const client = window.supabase.createClient(url, key);
+      window.supabaseClient = client;
+      window.sb = client;
+    }
+
+    const badge = document.getElementById("cloud-badge");
+    if (badge) {
+      badge.textContent = "Cloud Connected";
+      badge.className = "badge badge-cloud";
+    }
+
+    statusEl.textContent = "Qindaa'inni Supabase ol-kaa'ameera fi wal-qabsiifameera!";
+    if (typeof showToast === "function") showToast("Supabase qindaa'inni ol-kaa'ameera!");
+  };
+
+  window.nmTestAdminSupabase = async function () {
+    const url = (document.getElementById("nm-admin-sb-url").value || "").trim();
+    const key = (document.getElementById("nm-admin-sb-key").value || "").trim();
+    const statusEl = document.getElementById("nm-admin-sb-status");
+
+    if (!url || !key || !window.supabase || typeof window.supabase.createClient !== "function") {
+      statusEl.textContent = "URL, Anon Key ykn Supabase JS SDK hin argamne.";
+      return;
+    }
+
+    statusEl.textContent = "Wal-qunnamtii (connection) qoraa jira...";
+    try {
+      const testClient = window.supabase.createClient(url, key);
+      const { error } = await testClient.auth.getSession();
+      if (error) {
+        statusEl.textContent = "Dogoggora: " + error.message;
+      } else {
+        statusEl.textContent = "Wal-qunnamtiin Supabase milkaa'eera (OK)!";
+      }
+    } catch (e) {
+      statusEl.textContent = "Rakkoon uumame: " + (e.message || e);
+    }
+  };
+
+  window.addEventListener("DOMContentLoaded", function () {
+    nmEnsureTopbarAdminTrigger();
+    nmBuildAdminPanel();
+    nmSyncAdminVisibility();
+    setTimeout(nmSyncAdminVisibility, 400);
+  });
+})();
+</script>
 </body>
   </html>
