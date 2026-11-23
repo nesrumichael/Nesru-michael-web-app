@@ -4676,6 +4676,492 @@
     nmRenderInstallBar();
   });
 })();
-                                                        </script>
+                                                        </script><!-- ==========================================================
+     NESRU MICHAEL POST-LOGIN UI: TOP-LEFT SETTINGS & INFO MENU,
+     TOP-RIGHT PROFILE & LIKE/COMMENT/SHARE POSTS FEED
+     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
+     ========================================================== -->
+<style id="nm-postlogin-ui-style">
+  .nm-pl-header {
+    position: sticky;
+    top: 0;
+    z-index: 980;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #ffffff;
+    color: #0f172a;
+    border-bottom: 1px solid #cbd5e1;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  }
+  body.dark-mode .nm-pl-header {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+  .nm-pl-pill-btn {
+    border: 1px solid #cbd5e1;
+    background: #f1f5f9;
+    color: #0f172a;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  body.dark-mode .nm-pl-pill-btn {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+  }
+  .nm-pl-pill-btn.primary {
+    background: #1877f2;
+    color: #ffffff;
+    border-color: #1877f2;
+  }
+
+  /* Top-Left Dropdown Menu */
+  .nm-pl-left-wrap {
+    position: relative;
+  }
+  .nm-pl-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 280px;
+    max-width: calc(100vw - 24px);
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+    z-index: 1200;
+  }
+  body.dark-mode .nm-pl-dropdown {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+  }
+  .nm-pl-dropdown.open {
+    display: block;
+  }
+  .nm-pl-menu-item {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: inherit;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nm-pl-menu-item:hover {
+    background: rgba(24, 119, 242, 0.12);
+    color: #1877f2;
+  }
+  .nm-pl-section-label {
+    font-size: 11px;
+    font-weight: 800;
+    opacity: 0.7;
+    padding: 6px 10px 3px;
+    text-transform: uppercase;
+  }
+  .nm-pl-divider {
+    height: 1px;
+    background: rgba(148, 163, 184, 0.25);
+    margin: 5px 0;
+  }
+
+  /* Main Container */
+  .nm-pl-main {
+    max-width: 780px;
+    margin: 14px auto 40px;
+    padding: 0 12px;
+  }
+  .nm-pl-card {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  body.dark-mode .nm-pl-card {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+  .nm-pl-info-modal {
+    border: 2px solid #1877f2;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+  body.dark-mode .nm-pl-info-modal {
+    background: #0f172a;
+    color: #f8fafc;
+  }
+  .nm-pl-post-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    margin: 8px 0;
+  }
+  .nm-pl-act-btn {
+    flex: 1;
+    min-width: 90px;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    background: rgba(148, 163, 184, 0.16);
+    color: inherit;
+  }
+  .nm-pl-act-btn.active {
+    background: #1877f2;
+    color: #ffffff;
+  }
+</style>
+
+<!-- TOP BAR: LEFT SETTINGS & INFO MENU | RIGHT USER PROFILE -->
+<header class="nm-pl-header" id="nm-pl-header">
+  <!-- TOP LEFT: SETTINGS & WEBSITE INFO -->
+  <div class="nm-pl-left-wrap">
+    <button type="button" class="nm-pl-pill-btn primary" onclick="nmPlToggleLeftMenu()">
+      ⚙️ Settings & Info ▾
+    </button>
+
+    <div class="nm-pl-dropdown" id="nm-pl-left-dropdown">
+      <div class="nm-pl-section-label">Weebsaayitii & Qajeelfama</div>
+      <button type="button" class="nm-pl-menu-item" onclick="nmPlOpenDoc('about')">ℹ️ About (Waa'ee Keenya)</button>
+      <button type="button" class="nm-pl-menu-item" onclick="nmPlOpenDoc('contact')">📞 Contact (Nu Quunnamaa)</button>
+      <button type="button" class="nm-pl-menu-item" onclick="nmPlOpenDoc('policy')">📜 Policy (Imaammata)</button>
+      <button type="button" class="nm-pl-menu-item" onclick="nmPlOpenDoc('privacy')">🛡️ Terms of Privacy & Transparency</button>
+      <button type="button" class="nm-pl-menu-item" onclick="nmPlOpenDoc('support')">🆘 Support (Gargaarsa)</button>
+
+      <div class="nm-pl-divider"></div>
+      <div class="nm-pl-section-label">Social Media Biroo</div>
+      <a class="nm-pl-menu-item" href="https://facebook.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">📘 Facebook ↗</a>
+      <a class="nm-pl-menu-item" href="https://youtube.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">▶️ YouTube ↗</a>
+      <a class="nm-pl-menu-item" href="https://t.me" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">✈️ Telegram ↗</a>
+      <a class="nm-pl-menu-item" href="https://x.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">𝕏 X (Twitter) ↗</a>
+      <a class="nm-pl-menu-item" href="https://instagram.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">📸 Instagram ↗</a>
+      <a class="nm-pl-menu-item" href="https://tiktok.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">🎵 TikTok ↗</a>
+
+      <div class="nm-pl-divider"></div>
+      <button type="button" class="nm-pl-menu-item" onclick="nmPlToggleTheme()">🌓 Dark / Light Mode</button>
+    </div>
+  </div>
+
+  <!-- TOP RIGHT: USER PROFILE -->
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button type="button" class="nm-pl-pill-btn" onclick="nmPlOpenDoc('profile')">
+      <span>👤</span>
+      <span id="nm-pl-top-profile-name">Profile</span>
+    </button>
+  </div>
+</header>
+
+<main class="nm-pl-main" id="nm-pl-main">
+  <!-- Selected Menu Detail Box (About, Contact, Policy, Privacy & Transparency, Support, Profile) -->
+  <div id="nm-pl-doc-box"></div>
+
+  <!-- Create Post Box -->
+  <div class="nm-pl-card">
+    <strong style="display:block;margin-bottom:8px;">✍️ Maxxansa Haaraa Barreessi</strong>
+    <form onsubmit="nmPlCreatePost(event)" style="display:flex;flex-direction:column;gap:8px;">
+      <input type="text" id="nm-pl-title" placeholder="Mata-duree maxxansaa (Title)..." required />
+      <textarea id="nm-pl-body" rows="2" placeholder="Wanta yaaddu ykn odeeffannoo barreessi..." required></textarea>
+      <button type="submit" class="nm-pl-pill-btn primary" style="align-self:flex-start;">Maxxansi</button>
+    </form>
+  </div>
+
+  <!-- Posts Feed with Like, Comment & Share -->
+  <div id="nm-pl-feed-list"></div>
+</main>
+
+<script>
+(function () {
+  const LS_POSTS = "nesru_restored_posts_v1";
+  const LS_USER = "nm_persisted_auth_user_v1";
+  let openDocKey = "";
+
+  function esc(v) {
+    return String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function readJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {}
+  }
+
+  function getUser() {
+    const u = readJson(LS_USER, null);
+    if (u && u.email) {
+      return {
+        email: u.email,
+        name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0]
+      };
+    }
+    return { email: "nesrumichael@gmail.com", name: "Nesru Michael" };
+  }
+
+  function getPosts() {
+    const p = readJson(LS_POSTS, null);
+    if (Array.isArray(p) && p.length) return p;
+    const seed = [
+      {
+        id: "pl-1",
+        author: "Nesru Michael",
+        author_email: "nesrumichael@gmail.com",
+        title: "Baga Nagaan Dhuftan",
+        body: "Post namoota biroo irratti Like, Comment, fi Share gochuu dandeessu; gubbaa bitaatti Settings & Info, mirgatti Profile keessan argattu.",
+        likes: [],
+        comments: [],
+        shares: 0
+      }
+    ];
+    writeJson(LS_POSTS, seed);
+    return seed;
+  }
+
+  window.nmPlToggleLeftMenu = function () {
+    const dd = document.getElementById("nm-pl-left-dropdown");
+    if (dd) dd.classList.toggle("open");
+  };
+
+  window.nmPlToggleTheme = function () {
+    document.body.classList.toggle("dark-mode");
+  };
+
+  window.nmPlOpenDoc = function (key) {
+    openDocKey = openDocKey === key ? "" : key;
+    const dd = document.getElementById("nm-pl-left-dropdown");
+    if (dd) dd.classList.remove("open");
+    renderDocBox();
+  };
+
+  function renderDocBox() {
+    const box = document.getElementById("nm-pl-doc-box");
+    if (!box) return;
+    if (!openDocKey) {
+      box.innerHTML = "";
+      return;
+    }
+
+    const u = getUser();
+    const docs = {
+      profile: `
+        <strong>👤 Profile Mataa Keetii</strong>
+        <div style="margin-top:6px;font-size:13px;">
+          <div><strong>Maqaa:</strong> ${esc(u.name)}</div>
+          <div><strong>Email:</strong> ${esc(u.email)}</div>
+        </div>
+      `,
+      about: `
+        <strong>ℹ️ About — Nesru Michael</strong>
+        <p style="margin-top:6px;font-size:13px;line-height:1.5;">
+          Nesru Michael waltajjii hawaasaa, maxxansa (*posts*), *like*, *comment*, *share*, fi wal-qunnamtii hawaasaa kan qindeessu dha.
+        </p>
+      `,
+      contact: `
+        <strong>📞 Contact — Nu Quunnamaa</strong>
+        <div style="margin-top:6px;font-size:13px;line-height:1.5;">
+          <div><strong>Support Email:</strong> nesrumichael@gmail.com</div>
+          <div><strong>Admin Email:</strong> rammis910@gmail.com</div>
+        </div>
+      `,
+      policy: `
+        <strong>📜 Policy — Imaammata Fayyadamaa</strong>
+        <p style="margin-top:6px;font-size:13px;line-height:1.5;">
+          Fayyadamtoonni maxxansa kabajaa, wal-danda'uu, fi seera weebsaayitii eeguun wal-qunnamuu qabu.
+        </p>
+      `,
+      privacy: `
+        <strong>🛡️ Terms of Privacy & Transparency</strong>
+        <p style="margin-top:6px;font-size:13px;line-height:1.5;">
+          Ifatti hubannoo (*transparency*) fi eegumsa dhuunfaa (*privacy*) irratti hundaa'uun odeeffannoon fayyadamaa qajeelfama *account* fi *session* keessatti qofa itti fayyadama.
+        </p>
+      `,
+      support: `
+        <strong>🆘 Support — Gargaarsa</strong>
+        <p style="margin-top:6px;font-size:13px;line-height:1.5;">
+          Yoo rakkoon *login*, *post*, ykn *account* isin mudate gara <strong>nesrumichael@gmail.com</strong> ergaa ergaa.
+        </p>
+      `
+    };
+
+    box.innerHTML = `
+      <div class="nm-pl-info-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div>${docs[openDocKey] || ""}</div>
+          <button type="button" class="nm-pl-pill-btn" onclick="nmPlOpenDoc('')">✕</button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.nmPlCreatePost = function (e) {
+    if (e) e.preventDefault();
+    const title = (document.getElementById("nm-pl-title")?.value || "").trim();
+    const body = (document.getElementById("nm-pl-body")?.value || "").trim();
+    if (!title || !body) return;
+    const u = getUser();
+    const posts = getPosts();
+    posts.unshift({
+      id: "pl-" + Date.now(),
+      author: u.name,
+      author_email: u.email,
+      title,
+      body,
+      likes: [],
+      comments: [],
+      shares: 0
+    });
+    writeJson(LS_POSTS, posts);
+    document.getElementById("nm-pl-title").value = "";
+    document.getElementById("nm-pl-body").value = "";
+    renderFeed();
+  };
+
+  window.nmPlToggleLike = function (postId) {
+    const me = getUser().email;
+    const posts = getPosts();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.likes = Array.isArray(p.likes) ? p.likes : [];
+    const idx = p.likes.indexOf(me);
+    if (idx >= 0) p.likes.splice(idx, 1);
+    else p.likes.push(me);
+    writeJson(LS_POSTS, posts);
+    renderFeed();
+  };
+
+  window.nmPlAddComment = function (e, postId) {
+    if (e) e.preventDefault();
+    const inp = document.getElementById("nm-pl-c-input-" + postId);
+    const text = (inp?.value || "").trim();
+    if (!text) return;
+    const me = getUser();
+    const posts = getPosts();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.comments = Array.isArray(p.comments) ? p.comments : [];
+    p.comments.push({ author: me.name || me.email, text });
+    writeJson(LS_POSTS, posts);
+    if (inp) inp.value = "";
+    renderFeed();
+  };
+
+  window.nmPlSharePost = function (postId) {
+    const posts = getPosts();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.shares = (p.shares || 0) + 1;
+    writeJson(LS_POSTS, posts);
+    const txt = (p.title || "Post") + " - " + (p.body || "");
+    navigator.clipboard?.writeText(txt).catch(() => {});
+    alert("Post share ta'eera!");
+    renderFeed();
+  };
+
+  function renderFeed() {
+    const u = getUser();
+    const topName = document.getElementById("nm-pl-top-profile-name");
+    if (topName) topName.textContent = u.name;
+
+    const list = document.getElementById("nm-pl-feed-list");
+    if (!list) return;
+    const posts = getPosts();
+
+    list.innerHTML = posts
+      .map((p) => {
+        const likes = Array.isArray(p.likes) ? p.likes : [];
+        const liked = likes.includes(u.email);
+        const comments = Array.isArray(p.comments) ? p.comments : [];
+        const shares = p.shares || 0;
+
+        return `
+          <article class="nm-pl-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+              <strong>${esc(p.author || p.author_email || "User")}</strong>
+              <span class="muted">${esc(p.author_email || "")}</span>
+            </div>
+            ${p.title ? `<div style="font-weight:700;margin-bottom:4px;">${esc(p.title)}</div>` : ""}
+            <div style="font-size:14px;line-height:1.45;">${esc(p.body || "")}</div>
+
+            <div class="nm-pl-post-actions">
+              <button type="button" class="nm-pl-act-btn ${liked ? "active" : ""}" onclick="nmPlToggleLike('${esc(p.id)}')">
+                👍 Like (${likes.length})
+              </button>
+              <button type="button" class="nm-pl-act-btn" onclick="document.getElementById('nm-pl-c-input-${esc(p.id)}')?.focus()">
+                💬 Comment (${comments.length})
+              </button>
+              <button type="button" class="nm-pl-act-btn" onclick="nmPlSharePost('${esc(p.id)}')">
+                ↗️ Share (${shares})
+              </button>
+            </div>
+
+            <div style="font-size:12px;margin-bottom:8px;">
+              ${comments.map((c) => `<div style="margin-bottom:4px;"><strong>${esc(c.author)}:</strong> ${esc(c.text)}</div>`).join("")}
+            </div>
+
+            <form onsubmit="nmPlAddComment(event, '${esc(p.id)}')" style="display:flex;gap:6px;">
+              <input type="text" id="nm-pl-c-input-${esc(p.id)}" placeholder="Comment barreessi..." required />
+              <button type="submit" class="nm-pl-pill-btn primary">Ergi</button>
+            </form>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  document.addEventListener("click", function (ev) {
+    const wrap = document.querySelector(".nm-pl-left-wrap");
+    const dd = document.getElementById("nm-pl-left-dropdown");
+    if (wrap && dd && !wrap.contains(ev.target)) {
+      dd.classList.remove("open");
+    }
+  });
+
+  window.addEventListener("DOMContentLoaded", function () {
+    renderDocBox();
+    renderFeed();
+  });
+})();
+</script>
 </body>
   </html>
