@@ -1420,6 +1420,133 @@
     }
   });
 })();
-    </script>
+    </script><!-- ==========================================================
+     NESRU MICHAEL CLEAN LOGIN & OWNER PANEL (APPEND BEFORE </body>)
+     ========================================================== -->
+<div id="nm-clean-login-screen" style="position:fixed;inset:0;z-index:99999;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div style="width:100%;max-width:400px;background:#fff;color:#0f172a;border-radius:14px;padding:20px;">
+    <h3 style="margin-bottom:6px;">🔐 Nesru Michael — Seeni</h3>
+    <p class="muted" style="margin-bottom:12px;">Email fi Password keetiin seeni.</p>
+
+    <div class="form-group">
+      <label for="nm-clean-email">Email</label>
+      <input type="email" id="nm-clean-email" placeholder="rammis910@gmail.com" />
+    </div>
+
+    <div class="form-group">
+      <label for="nm-clean-pass">Password</label>
+      <input type="password" id="nm-clean-pass" placeholder="Password galchi" />
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-primary" style="flex:1;" onclick="nmCleanLogin()">Seeni (Login)</button>
+      <button type="button" class="btn btn-outline" style="flex:1;" onclick="nmCleanSignUp()">Sign Up</button>
+    </div>
+
+    <div id="nm-clean-auth-msg" class="muted" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const SB_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
+  const SB_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2d2trZXFpY2VqZnVxY3pjbGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDkyMDMsImV4cCI6MjExMDY4NTIwM30.QzR4DDlBlfQva6hQWtdyXXZK1PCnBCT73XAifwVbMSs";
+  const OWNER_EMAIL = "rammis910@gmail.com";
+
+  localStorage.setItem("nm_custom_supabase_url", SB_URL);
+  localStorage.setItem("nm_custom_supabase_anon_key", SB_KEY);
+  localStorage.setItem("supabase_anon_key", SB_KEY);
+  localStorage.setItem("nm_sb_key", SB_KEY);
+
+  let client = null;
+  if (window.supabase && typeof window.supabase.createClient === "function") {
+    client = window.supabase.createClient(SB_URL, SB_KEY);
+    window.supabaseClient = client;
+    window.sb = client;
+    window._supabase = client;
+  }
+
+  function setMsg(text) {
+    const el = document.getElementById("nm-clean-auth-msg");
+    if (el) el.textContent = text;
+  }
+
+  function updateScreen(user) {
+    const screen = document.getElementById("nm-clean-login-screen");
+    if (user) {
+      if (screen) screen.style.display = "none";
+      document.body.style.overflow = "";
+      const tag = document.getElementById("feed-user-tag");
+      if (tag) tag.textContent = user.email || "User";
+      if ((user.email || "").toLowerCase() === OWNER_EMAIL.toLowerCase()) {
+        const ownerBox = document.getElementById("nm-owner-supabase-box");
+        if (ownerBox) ownerBox.classList.remove("nm-owner-hidden");
+      }
+    } else {
+      if (screen) screen.style.display = "flex";
+      document.body.style.overflow = "hidden";
+    }
+  }
+
+  window.nmCleanLogin = async function () {
+    const email = (document.getElementById("nm-clean-email").value || "").trim();
+    const password = document.getElementById("nm-clean-pass").value || "";
+    if (!client) {
+      setMsg("Supabase SDK hin fe'amne. Fuula refresh godhi.");
+      return;
+    }
+    if (!email || !password) {
+      setMsg("Email fi Password guuti.");
+      return;
+    }
+    setMsg("Seenaa jira...");
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) {
+      setMsg("Seenuu dide: " + error.message);
+      return;
+    }
+    setMsg("Milkaa'inaan seentaniirtu!");
+    updateScreen(data.user);
+  };
+
+  window.nmCleanSignUp = async function () {
+    const email = (document.getElementById("nm-clean-email").value || "").trim();
+    const password = document.getElementById("nm-clean-pass").value || "";
+    if (!client) {
+      setMsg("Supabase SDK hin fe'amne. Fuula refresh godhi.");
+      return;
+    }
+    if (!email || !password) {
+      setMsg("Email fi Password guuti.");
+      return;
+    }
+    setMsg("Galmaa'aa jira...");
+    const { data, error } = await client.auth.signUp({ email, password });
+    if (error) {
+      setMsg("Galmaa'uu dide: " + error.message);
+      return;
+    }
+    if (data && data.session && data.session.user) {
+      setMsg("Account uumameera, seentaniirtu!");
+      updateScreen(data.session.user);
+    } else {
+      setMsg("Account uumameera! Yoo email confirmation hin barbaachifne 'Seeni (Login)' tuqi.");
+    }
+  };
+
+  window.addEventListener("DOMContentLoaded", async function () {
+    if (!client || !client.auth) {
+      updateScreen(null);
+      return;
+    }
+    const { data } = await client.auth.getSession();
+    updateScreen(data && data.session ? data.session.user : null);
+    client.auth.onAuthStateChange(function (_ev, session) {
+      updateScreen(session ? session.user : null);
+    });
+  });
+})();
+</script>
 </body>
   </html>
