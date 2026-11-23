@@ -5162,6 +5162,286 @@
     renderFeed();
   });
 })();
+</script><!-- ==========================================================
+     NESRU MICHAEL FACEBOOK STYLE + MOVE SITE INFO TO SETTINGS
+     MENU ONLY — APPEND BEFORE </body> (DOES NOT DELETE CODE)
+     ========================================================== -->
+<style id="nm-fb-clean-style">
+  /* 1. Odeeffannoowwan site kanneen fuula gidduutti mul'atan dhoksuu */
+  footer,
+  .site-footer,
+  .app-footer,
+  [id*="footer"],
+  [class*="footer"] {
+    display: none !important;
+  }
+
+  /* Fuula gidduu keessatti link/button odeeffannoo site (About/Policy/Terms/Transparency/Support) dhoksuu */
+  #nm-fb-center-slot a[href*="privacy"],
+  #nm-fb-center-slot a[href*="terms"],
+  #nm-fb-center-slot a[href*="about"],
+  #nm-fb-center-slot a[href*="contact"],
+  #nm-fb-center-slot a[href*="support"],
+  #nm-fb-center-slot a[href*="transparency"],
+  #nm-pl-main a[href*="facebook.com"],
+  #nm-pl-main a[href*="youtube.com"],
+  #nm-pl-main a[href*="t.me"],
+  #nm-pl-main a[href*="x.com"],
+  #nm-pl-main a[href*="instagram.com"],
+  #nm-pl-main a[href*="tiktok.com"],
+  #nm-pl-main a[href*="github.com"],
+  #nm-pl-main a[href*="mailto:"] {
+    display: none !important;
+  }
+
+  /* 2. Facebook-like clean surface & post card look */
+  body {
+    background: #f0f2f5 !important;
+    color: #050505 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  }
+  body.dark-mode {
+    background: #18191a !important;
+    color: #e4e6eb !important;
+  }
+
+  .nm-fb-clean-bar {
+    position: sticky;
+    top: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #dadde1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+  body.dark-mode .nm-fb-clean-bar {
+    background: #242526;
+    border-bottom-color: #3a3b3c;
+    color: #e4e6eb;
+  }
+  .nm-fb-wordmark {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #1877f2;
+    cursor: pointer;
+    user-select: none;
+  }
+  .nm-fb-top-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nm-fb-circle-btn {
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: none;
+    background: #e4e6eb;
+    color: #050505;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  body.dark-mode .nm-fb-circle-btn {
+    background: #3a3b3c;
+    color: #e4e6eb;
+  }
+  .nm-fb-circle-btn.blue {
+    background: #1877f2;
+    color: #ffffff;
+  }
+
+  /* Settings Menu Drawer (Odeeffannoowwan site hundi as keessa galu) */
+  #nm-fb-settings-drawer {
+    display: none;
+    position: fixed;
+    top: 54px;
+    left: 12px;
+    right: 12px;
+    max-width: 440px;
+    z-index: 2147483600;
+    background: #ffffff;
+    color: #050505;
+    border: 1px solid #ccd0d5;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+    max-height: 78vh;
+    overflow-y: auto;
+  }
+  body.dark-mode #nm-fb-settings-drawer {
+    background: #242526;
+    color: #e4e6eb;
+    border-color: #3a3b3c;
+  }
+  #nm-fb-settings-drawer.open {
+    display: block;
+  }
+  .nm-fb-menu-row {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: inherit;
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nm-fb-menu-row:hover {
+    background: rgba(24, 119, 242, 0.1);
+    color: #1877f2;
+  }
+  .nm-fb-info-box {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f0f2f5;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  body.dark-mode .nm-fb-info-box {
+    background: #3a3b3c;
+  }
+
+  /* Facebook Post Card Styling */
+  .post-card,
+  .nm-pl-card,
+  .nm-fv-post {
+    background: #ffffff !important;
+    color: #050505 !important;
+    border: 1px solid #dddfe2 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  }
+  body.dark-mode .post-card,
+  body.dark-mode .nm-pl-card,
+  body.dark-mode .nm-fv-post {
+    background: #242526 !important;
+    color: #e4e6eb !important;
+    border-color: #3a3b3c !important;
+  }
+</style>
+
+<!-- FACEBOOK CLEAN TOP BAR -->
+<div class="nm-fb-clean-bar" id="nm-fb-clean-bar">
+  <div class="nm-fb-wordmark" onclick="nmFbCleanScrollTop()">nesru social</div>
+
+  <div class="nm-fb-top-tools">
+    <button type="button" class="nm-fb-circle-btn blue" onclick="nmFbCleanFocusPost()">+ Post</button>
+    <button type="button" class="nm-fb-circle-btn" onclick="nmFbCleanToggleSettings()">☰ Settings</button>
+  </div>
+</div>
+
+<!-- SETTINGS MENU (ODEEFFANNOOWWAN SITE HUNDI AS KEESSATTI ARGAMU) -->
+<div id="nm-fb-settings-drawer">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <strong style="font-size:15px;">⚙️ Menu Settings & Site Info</strong>
+    <button type="button" class="nm-fb-circle-btn" style="height:28px;padding:0 9px;" onclick="nmFbCleanToggleSettings()">✕</button>
+  </div>
+
+  <button type="button" class="nm-fb-menu-row" onclick="nmFbShowSiteDetail('about')">ℹ️ About (Waa'ee Site)</button>
+  <button type="button" class="nm-fb-menu-row" onclick="nmFbShowSiteDetail('contact')">📞 Contact (Quunnamtii)</button>
+  <button type="button" class="nm-fb-menu-row" onclick="nmFbShowSiteDetail('policy')">📜 Policy & Terms</button>
+  <button type="button" class="nm-fb-menu-row" onclick="nmFbShowSiteDetail('privacy')">🛡️ Privacy & Transparency</button>
+  <button type="button" class="nm-fb-menu-row" onclick="nmFbShowSiteDetail('support')">🆘 Support (Gargaarsa)</button>
+  <button type="button" class="nm-fb-menu-row" onclick="nmFbShowSiteDetail('socials')">🌐 Social Media & Links</button>
+  <button type="button" class="nm-fb-menu-row" onclick="document.body.classList.toggle('dark-mode')">🌓 Dark / Light Mode</button>
+
+  <div id="nm-fb-site-detail-panel"></div>
+</div>
+
+<script>
+(function () {
+  function nmFbHideInlineSiteInfoBlocks() {
+    // Hide footer/info cards inside main content so site info stays inside Settings menu only
+    document.querySelectorAll("section, div").forEach((el) => {
+      if (
+        el.id === "nm-fb-settings-drawer" ||
+        el.id === "nm-fb-site-detail-panel" ||
+        el.id === "nm-fb-clean-bar" ||
+        el.closest("#nm-fb-settings-drawer")
+      ) {
+        return;
+      }
+      const txt = (el.textContent || "").trim();
+      if (
+        txt.includes("All Rights Reserved") &&
+        txt.includes("Transparency") &&
+        txt.includes("Privacy Policy") &&
+        txt.length < 700
+      ) {
+        el.style.display = "none";
+      }
+    });
+  }
+
+  window.nmFbCleanScrollTop = function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  window.nmFbCleanFocusPost = function () {
+    const inp =
+      document.getElementById("nm-pl-title") ||
+      document.getElementById("nm-fv-post-title") ||
+      document.getElementById("post-title") ||
+      document.getElementById("post-body");
+    if (inp) {
+      inp.scrollIntoView({ behavior: "smooth", block: "center" });
+      inp.focus();
+    }
+  };
+
+  window.nmFbCleanToggleSettings = function () {
+    const drawer = document.getElementById("nm-fb-settings-drawer");
+    if (!drawer) return;
+    drawer.classList.toggle("open");
+    if (drawer.classList.contains("open")) {
+      window.nmFbShowSiteDetail("about");
+    }
+  };
+
+  window.nmFbShowSiteDetail = function (key) {
+    const panel = document.getElementById("nm-fb-site-detail-panel");
+    if (!panel) return;
+
+    const map = {
+      about:
+        "<strong>About:</strong> Nesru Michael waltajjii hawaasaa, maxxansa (*posts*), *like*, *comment*, *share*, *profile*, fi *chat* waliinii dha.",
+      contact:
+        "<strong>Contact:</strong> Email: nesrumichael@gmail.com | Admin: rammis910@gmail.com",
+      policy:
+        "<strong>Policy & Terms:</strong> Fayyadamtoonni qajeelfama hawaasaa, kabajaa, fi seera weebsaayitii eeguun itti fayyadamu.",
+      privacy:
+        "<strong>Privacy & Transparency:</strong> Eegumsa dhuunfaa (*privacy*) fi iftoomina (*transparency*) irratti hundaa'ee hojjeta.",
+      support:
+        "<strong>Support:</strong> Gargaarsaaf gara nesrumichael@gmail.com ergaa ergaa.",
+      socials:
+        "<strong>Social Media & Links:</strong> Website (" +
+        window.location.href +
+        ") • Telegram • Facebook • YouTube • GitHub • Email (nesrumichael@gmail.com)"
+    };
+
+    panel.innerHTML = `<div class="nm-fb-info-box">${map[key] || ""}</div>`;
+  };
+
+  window.addEventListener("DOMContentLoaded", function () {
+    nmFbHideInlineSiteInfoBlocks();
+    setInterval(nmFbHideInlineSiteInfoBlocks, 1200);
+  });
+})();
 </script>
 </body>
   </html>
