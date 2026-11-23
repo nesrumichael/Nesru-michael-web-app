@@ -2758,6 +2758,658 @@
     nmSyncLockedStorage();
   }, 1500);
 })();
-</script>
+</script><!-- ==========================================================
+     NESRU MICHAEL SOCIAL SUITE: PUBLIC PROFILES, EDIT POST,
+     PRIVATE CHAT, CHANNELS & GROUPS (APPEND BEFORE </body>)
+     ========================================================== -->
+<style id="nm-social-suite-style">
+  #nm-social-suite-panel {
+    margin-top: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 14px;
+    background: #ffffff;
+    color: #0f172a;
+  }
+  body.dark-mode #nm-social-suite-panel {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+  .nm-suite-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .nm-suite-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .nm-suite-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+  body.dark-mode .nm-suite-card {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+  .nm-suite-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    margin-bottom: 6px;
+  }
+  .nm-chat-log {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 8px;
+    margin: 8px 0;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+  body.dark-mode .nm-chat-log {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+  .nm-msg-item {
+    padding: 6px 8px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: #e2e8f0;
+    font-size: 13px;
+  }
+  body.dark-mode .nm-msg-item {
+    background: #1e293b;
+  }
+  .nm-msg-item.mine {
+    background: #2563eb;
+    color: #ffffff;
+  }
+</style>
+
+<script>
+(function () {
+  const LS_PROFILES = "nm_public_profiles_v1";
+  const LS_POSTS = "nesru_restored_posts_v1";
+  const LS_DM = "nm_private_dm_v1";
+  const LS_COMMUNITIES = "nm_channels_groups_v1";
+
+  let currentSuiteTab = "profiles";
+  let selectedDmUser = "";
+  let selectedCommunityId = "";
+
+  function esc(v) {
+    return String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function readJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {}
+  }
+
+  function toast(msg) {
+    if (typeof window.showToast === "function") {
+      window.showToast(msg);
+      return;
+    }
+    const t = document.getElementById("toast");
+    if (t) {
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2200);
+    }
+  }
+
+  function getMe() {
+    try {
+      if (typeof currentUser !== "undefined" && currentUser && currentUser.email) {
+        return {
+          email: currentUser.email.toLowerCase(),
+          name:
+            (currentUser.user_metadata && currentUser.user_metadata.full_name) ||
+            currentUser.email.split("@")[0]
+        };
+      }
+    } catch (e) {}
+    try {
+      const u = JSON.parse(localStorage.getItem("nm_persisted_auth_user_v1") || "null");
+      if (u && u.email) {
+        return {
+          email: u.email.toLowerCase(),
+          name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0]
+        };
+      }
+    } catch (e) {}
+    return { email: "nesrumichael@gmail.com", name: "Nesru Michael" };
+  }
+
+  function getPublicProfiles() {
+    const me = getMe();
+    const list = readJson(LS_PROFILES, [
+      {
+        email: "nesrumichael@gmail.com",
+        name: "Nesru Michael",
+        role: "Creator / Admin",
+        bio: "Educational planning and management student & web/PWA creator.",
+        isPublic: true
+      },
+      {
+        email: "rammis910@gmail.com",
+        name: "Rammis Nas",
+        role: "Member",
+        bio: "Building web apps & communities.",
+        isPublic: true
+      }
+    ]);
+    if (!list.some((p) => (p.email || "").toLowerCase() === me.email)) {
+      list.unshift({
+        email: me.email,
+        name: me.name,
+        role: "Public Member",
+        bio: "Public profile active.",
+        isPublic: true
+      });
+      writeJson(LS_PROFILES, list);
+    }
+    return list;
+  }
+
+  function getPosts() {
+    const p = readJson(LS_POSTS, null);
+    return Array.isArray(p) ? p : [];
+  }
+
+  function savePosts(posts) {
+    writeJson(LS_POSTS, posts);
+    if (typeof window.renderPosts === "function") {
+      try {
+        window.renderPosts();
+      } catch (e) {}
+    }
+  }
+
+  function getDms() {
+    return readJson(LS_DM, [
+      {
+        id: "dm-1",
+        from: "nesrumichael@gmail.com",
+        to: "rammis910@gmail.com",
+        text: "Akkam jirta? Chat dhuunfaa asirratti hojjechaa jira.",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }
+    ]);
+  }
+
+  function getCommunities() {
+    return readJson(LS_COMMUNITIES, [
+      {
+        id: "ch-general",
+        type: "channel",
+        name: "Oromoo & Web Updates",
+        description: "Channel beeksisaafi odeeffannoo haaraa.",
+        owner: "nesrumichael@gmail.com",
+        members: ["nesrumichael@gmail.com"],
+        posts: [
+          {
+            id: "cp-1",
+            author: "Nesru Michael",
+            text: "Baga gara Channel haaraa dhuftan!",
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          }
+        ]
+      },
+      {
+        id: "grp-builders",
+        type: "group",
+        name: "Developers & Creators Group",
+        description: "Group marii waliinii fi wal-gargaarsaa.",
+        owner: "nesrumichael@gmail.com",
+        members: ["nesrumichael@gmail.com"],
+        posts: [
+          {
+            id: "gp-1",
+            author: "Nesru Michael",
+            text: "Group keessatti marii jalqabuu dandeessu.",
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          }
+        ]
+      }
+    ]);
+  }
+
+  function ensurePanelExists() {
+    if (document.getElementById("nm-social-suite-panel")) return;
+    const host =
+      document.querySelector("main.container") ||
+      document.getElementById("view-feed") ||
+      document.body;
+
+    const panel = document.createElement("section");
+    panel.id = "nm-social-suite-panel";
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <strong>🌐 Public Profiles, Edit Post, Private Chat, Channels & Groups</strong>
+        <span class="muted" id="nm-suite-me-label"></span>
+      </div>
+      <div class="nm-suite-tabs">
+        <button type="button" class="btn btn-sm btn-primary" data-suite-tab="profiles" onclick="nmSwitchSuiteTab('profiles')">👤 Public Profiles</button>
+        <button type="button" class="btn btn-sm btn-outline" data-suite-tab="editposts" onclick="nmSwitchSuiteTab('editposts')">✏️ Edit My Posts</button>
+        <button type="button" class="btn btn-sm btn-outline" data-suite-tab="dm" onclick="nmSwitchSuiteTab('dm')">🔒 Private Chat</button>
+        <button type="button" class="btn btn-sm btn-outline" data-suite-tab="communities" onclick="nmSwitchSuiteTab('communities')">📢 Channels & Groups</button>
+      </div>
+      <div id="nm-suite-body"></div>
+    `;
+    host.appendChild(panel);
+  }
+
+  window.nmSwitchSuiteTab = function (tab) {
+    currentSuiteTab = tab;
+    document.querySelectorAll("[data-suite-tab]").forEach((btn) => {
+      const active = btn.dataset.suiteTab === tab;
+      btn.classList.toggle("btn-primary", active);
+      btn.classList.toggle("btn-outline", !active);
+    });
+    renderSuiteBody();
+  };
+
+  window.nmSaveMyPublicProfile = function (e) {
+    if (e) e.preventDefault();
+    const me = getMe();
+    const name = (document.getElementById("nm-pub-name")?.value || me.name).trim();
+    const bio = (document.getElementById("nm-pub-bio")?.value || "").trim();
+    const isPublic = Boolean(document.getElementById("nm-pub-visible")?.checked);
+
+    const list = getPublicProfiles();
+    const idx = list.findIndex((p) => (p.email || "").toLowerCase() === me.email);
+    const entry = {
+      email: me.email,
+      name: name || me.name,
+      role: isPublic ? "Public Profile" : "Private",
+      bio,
+      isPublic
+    };
+    if (idx >= 0) list[idx] = entry;
+    else list.unshift(entry);
+    writeJson(LS_PROFILES, list);
+
+    const pName = document.getElementById("profile-name");
+    if (pName) pName.textContent = entry.name;
+    toast("Public profile ol-kaa'ameera!");
+    renderSuiteBody();
+  };
+
+  window.nmStartPrivateChatWith = function (email) {
+    selectedDmUser = (email || "").toLowerCase();
+    window.nmSwitchSuiteTab("dm");
+  };
+
+  window.nmSendPrivateDm = function (e) {
+    if (e) e.preventDefault();
+    const me = getMe();
+    const to = (document.getElementById("nm-dm-target")?.value || selectedDmUser || "").toLowerCase();
+    const text = (document.getElementById("nm-dm-input")?.value || "").trim();
+    if (!to || !text) return;
+    selectedDmUser = to;
+
+    const dms = getDms();
+    dms.push({
+      id: "dm-" + Date.now(),
+      from: me.email,
+      to,
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    });
+    writeJson(LS_DM, dms);
+    const inp = document.getElementById("nm-dm-input");
+    if (inp) inp.value = "";
+    renderSuiteBody();
+  };
+
+  window.nmSaveEditedPost = function (postId) {
+    const titleEl = document.getElementById("nm-edit-title-" + postId);
+    const bodyEl = document.getElementById("nm-edit-body-" + postId);
+    if (!titleEl || !bodyEl) return;
+
+    const posts = getPosts();
+    const idx = posts.findIndex((p) => String(p.id) === String(postId));
+    if (idx < 0) return;
+
+    posts[idx] = {
+      ...posts[idx],
+      title: titleEl.value.trim(),
+      body: bodyEl.value.trim(),
+      updated_at: new Date().toISOString()
+    };
+    savePosts(posts);
+    toast("Maxxansi kee edit ta'ee haaromfameera!");
+    renderSuiteBody();
+  };
+
+  window.nmCreateCommunity = function (e) {
+    if (e) e.preventDefault();
+    const me = getMe();
+    const type = document.getElementById("nm-comm-type")?.value === "group" ? "group" : "channel";
+    const name = (document.getElementById("nm-comm-name")?.value || "").trim();
+    const description = (document.getElementById("nm-comm-desc")?.value || "").trim();
+    if (!name) return;
+
+    const comms = getCommunities();
+    const created = {
+      id: (type === "group" ? "grp-" : "ch-") + Date.now(),
+      type,
+      name,
+      description,
+      owner: me.email,
+      members: [me.email],
+      posts: []
+    };
+    comms.unshift(created);
+    writeJson(LS_COMMUNITIES, comms);
+    selectedCommunityId = created.id;
+    document.getElementById("nm-comm-form")?.reset();
+    toast((type === "group" ? "Group " : "Channel ") + "'" + name + "' uumameera!");
+    renderSuiteBody();
+  };
+
+  window.nmJoinCommunity = function (commId) {
+    const me = getMe();
+    const comms = getCommunities();
+    const c = comms.find((x) => String(x.id) === String(commId));
+    if (!c) return;
+    c.members = Array.isArray(c.members) ? c.members : [];
+    if (!c.members.includes(me.email)) {
+      c.members.push(me.email);
+      writeJson(LS_COMMUNITIES, comms);
+      toast("Keessatti makamtaniirtu!");
+      renderSuiteBody();
+    }
+  };
+
+  window.nmPostInCommunity = function (e, commId) {
+    if (e) e.preventDefault();
+    const me = getMe();
+    const inp = document.getElementById("nm-comm-post-input-" + commId);
+    const text = (inp?.value || "").trim();
+    if (!text) return;
+
+    const comms = getCommunities();
+    const c = comms.find((x) => String(x.id) === String(commId));
+    if (!c) return;
+    c.posts = Array.isArray(c.posts) ? c.posts : [];
+    c.posts.push({
+      id: "cp-" + Date.now(),
+      author: me.name || me.email,
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    });
+    writeJson(LS_COMMUNITIES, comms);
+    if (inp) inp.value = "";
+    renderSuiteBody();
+  };
+
+  function renderSuiteBody() {
+    const me = getMe();
+    const meLabel = document.getElementById("nm-suite-me-label");
+    if (meLabel) meLabel.textContent = "Seentaniirtu: " + me.email;
+
+    const container = document.getElementById("nm-suite-body");
+    if (!container) return;
+
+    if (currentSuiteTab === "profiles") {
+      const profiles = getPublicProfiles();
+      const mine = profiles.find((p) => (p.email || "").toLowerCase() === me.email) || {
+        email: me.email,
+        name: me.name,
+        bio: "",
+        isPublic: true
+      };
+      const visibleProfiles = profiles.filter((p) => p.isPublic !== false || (p.email || "").toLowerCase() === me.email);
+
+      container.innerHTML = `
+        <form onsubmit="nmSaveMyPublicProfile(event)" class="nm-suite-card" style="margin-bottom:10px;">
+          <strong>👤 Public Profile Kee Qindeessi</strong>
+          <div class="form-group" style="margin-top:8px;">
+            <label>Maqaa Mul'atu (Public Name)</label>
+            <input type="text" id="nm-pub-name" value="${esc(mine.name)}" required />
+          </div>
+          <div class="form-group">
+            <label>Waa'ee Kee (Public Bio)</label>
+            <input type="text" id="nm-pub-bio" value="${esc(mine.bio || "")}" placeholder="Waa'ee keetii gabaabsii barreessi..." />
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:13px;">
+            <input type="checkbox" id="nm-pub-visible" ${mine.isPublic !== false ? "checked" : ""} />
+            Profile koo namoota biroof ifa (Public) haa ta'u
+          </label>
+          <button type="submit" class="btn btn-primary btn-sm">💾 Profile Ol-kaa'i</button>
+        </form>
+
+        <div class="nm-suite-grid">
+          ${visibleProfiles
+            .map((p) => {
+              const em = (p.email || "").toLowerCase();
+              const isSelf = em === me.email;
+              return `
+                <div class="nm-suite-card">
+                  <span class="nm-suite-pill">${p.isPublic !== false ? "🌍 Public" : "🔒 Private"}</span>
+                  <div><strong>${esc(p.name || p.email)}</strong></div>
+                  <div class="muted">${esc(p.email)}</div>
+                  <p style="font-size:13px;margin:6px 0;">${esc(p.bio || "Bio hin galmoofne.")}</p>
+                  ${
+                    !isSelf
+                      ? `<button type="button" class="btn btn-outline btn-sm" onclick="nmStartPrivateChatWith('${esc(em)}')">✉️ Chat Dhuunfaa</button>`
+                      : `<span class="muted">Profile mataa keetii</span>`
+                  }
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `;
+      return;
+    }
+
+    if (currentSuiteTab === "editposts") {
+      const posts = getPosts().filter(
+        (p) => (p.author_email || p.author || "").toLowerCase() === me.email
+      );
+      if (!posts.length) {
+        container.innerHTML = '<div class="muted">Maxxansa ati uumte hin qabdu. Feed irratti post haaraa uumii asirratti edit godhi.</div>';
+        return;
+      }
+      container.innerHTML = posts
+        .map(
+          (p) => `
+          <div class="nm-suite-card" style="margin-bottom:8px;">
+            <div class="form-group">
+              <label>Mata-duree (Title)</label>
+              <input type="text" id="nm-edit-title-${esc(p.id)}" value="${esc(p.title || "")}" />
+            </div>
+            <div class="form-group">
+              <label>Barreeffama Maxxansaa (Post Body)</label>
+              <textarea id="nm-edit-body-${esc(p.id)}" rows="2">${esc(p.body || "")}</textarea>
+            </div>
+            <button type="button" class="btn btn-success btn-sm" onclick="nmSaveEditedPost('${esc(p.id)}')">✏️ Edit Ol-kaa'i</button>
+          </div>
+        `
+        )
+        .join("");
+      return;
+    }
+
+    if (currentSuiteTab === "dm") {
+      const profiles = getPublicProfiles().filter((p) => (p.email || "").toLowerCase() !== me.email);
+      if (!selectedDmUser && profiles[0]) selectedDmUser = (profiles[0].email || "").toLowerCase();
+
+      const dms = getDms().filter(
+        (m) =>
+          (m.from === me.email && m.to === selectedDmUser) ||
+          (m.from === selectedDmUser && m.to === me.email)
+      );
+
+      container.innerHTML = `
+        <div class="nm-suite-card">
+          <strong>🔒 Chat Dhuunfaa (Private Message)</strong>
+          <div class="form-group" style="margin-top:8px;">
+            <label>Nama Waliin Haasoftu Filadhu</label>
+            <select id="nm-dm-target" onchange="selectedDmUser=this.value;renderSuiteBody();">
+              ${profiles
+                .map((p) => {
+                  const em = (p.email || "").toLowerCase();
+                  return `<option value="${esc(em)}" ${em === selectedDmUser ? "selected" : ""}>${esc(p.name || em)} (${esc(em)})</option>`;
+                })
+                .join("")}
+            </select>
+          </div>
+
+          <div class="nm-chat-log">
+            ${
+              dms.length
+                ? dms
+                    .map(
+                      (m) => `
+                    <div class="nm-msg-item ${m.from === me.email ? "mine" : ""}">
+                      <div><strong>${esc(m.from)}</strong> <span style="font-size:11px;opacity:.8;">${esc(m.time || "")}</span></div>
+                      <div>${esc(m.text)}</div>
+                    </div>
+                  `
+                    )
+                    .join("")
+                : '<div class="muted">Ergaan dhuunfaa hin jiru. Ergaa jalqabaa ergi!</div>'
+            }
+          </div>
+
+          <form onsubmit="nmSendPrivateDm(event)" style="display:flex;gap:6px;">
+            <input type="text" id="nm-dm-input" placeholder="Ergaa dhuunfaa barreessi..." required />
+            <button type="submit" class="btn btn-primary btn-sm">Ergi</button>
+          </form>
+        </div>
+      `;
+      return;
+    }
+
+    if (currentSuiteTab === "communities") {
+      const comms = getCommunities();
+      if (!selectedCommunityId && comms[0]) selectedCommunityId = comms[0].id;
+      const activeComm = comms.find((c) => String(c.id) === String(selectedCommunityId)) || comms[0];
+
+      container.innerHTML = `
+        <form id="nm-comm-form" onsubmit="nmCreateCommunity(event)" class="nm-suite-card" style="margin-bottom:10px;">
+          <strong>📢 Channel ykn Group Haaraa Uumi</strong>
+          <div class="nm-suite-grid">
+            <div class="form-group">
+              <label>Gosa (Type)</label>
+              <select id="nm-comm-type">
+                <option value="channel">Channel</option>
+                <option value="group">Group</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Maqaa Channel / Group</label>
+              <input type="text" id="nm-comm-name" placeholder="Fkn: Afaan Oromoo Writers" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Ibsa Gabaabaa</label>
+            <input type="text" id="nm-comm-desc" placeholder="Kaayyoo channel ykn group kanaa..." />
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">➕ Uumi (Create)</button>
+        </form>
+
+        <div class="nm-suite-grid" style="margin-bottom:10px;">
+          ${comms
+            .map((c) => {
+              const members = Array.isArray(c.members) ? c.members : [];
+              const joined = members.includes(me.email);
+              return `
+                <div class="nm-suite-card">
+                  <span class="nm-suite-pill">${c.type === "group" ? "👥 GROUP" : "📢 CHANNEL"}</span>
+                  <div><strong>${esc(c.name)}</strong></div>
+                  <div class="muted">${esc(c.description || "")}</div>
+                  <div class="muted" style="margin-top:4px;">Miseensota: ${members.length}</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="selectedCommunityId='${esc(c.id)}';renderSuiteBody();">Banadhu</button>
+                    ${
+                      !joined
+                        ? `<button type="button" class="btn btn-success btn-sm" onclick="nmJoinCommunity('${esc(c.id)}')">+ Makami</button>`
+                        : `<span class="muted" style="align-self:center;">✓ Miseensa</span>`
+                    }
+                  </div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        ${
+          activeComm
+            ? `
+            <div class="nm-suite-card">
+              <strong>${activeComm.type === "group" ? "👥 Group:" : "📢 Channel:"} ${esc(activeComm.name)}</strong>
+              <div class="muted">${esc(activeComm.description || "")}</div>
+              <div class="nm-chat-log">
+                ${
+                  Array.isArray(activeComm.posts) && activeComm.posts.length
+                    ? activeComm.posts
+                        .map(
+                          (cp) => `
+                        <div class="nm-msg-item">
+                          <div><strong>${esc(cp.author)}</strong> <span style="font-size:11px;opacity:.8;">${esc(cp.time || "")}</span></div>
+                          <div>${esc(cp.text)}</div>
+                        </div>
+                      `
+                        )
+                        .join("")
+                    : '<div class="muted">Ergaan keessa hin jiru.</div>'
+                }
+              </div>
+              <form onsubmit="nmPostInCommunity(event, '${esc(activeComm.id)}')" style="display:flex;gap:6px;">
+                <input type="text" id="nm-comm-post-input-${esc(activeComm.id)}" placeholder="Ergaa / post keessatti barreessi..." required />
+                <button type="submit" class="btn btn-primary btn-sm">Maxxansi</button>
+              </form>
+            </div>
+          `
+            : ""
+        }
+      `;
+    }
+  }
+
+  // Expose helper for external re-render
+  window.renderSuiteBody = renderSuiteBody;
+
+  window.addEventListener("DOMContentLoaded", function () {
+    ensurePanelExists();
+    renderSuiteBody();
+  });
+})();
+    </script>
 </body>
   </html>
