@@ -1923,6 +1923,769 @@
     nmRefreshLoginSb();
   });
 })();
+</script><!-- ==========================================================
+     NESRU MICHAEL RESTORE ALL FEATURES + SUPABASE BRIDGE
+     APPEND BEFORE </body> (PRESERVES EXISTING APP & LOCAL DATA)
+     ========================================================== -->
+<style id="nm-restore-all-style">
+  #nm-login-sb-card {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    font-size: 12px;
+    text-align: left;
+  }
+  .nm-restore-line {
+    margin-bottom: 5px;
+    word-break: break-all;
+  }
+  .nm-restore-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+</style>
+
+<script>
+(function () {
+  const SB_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
+  const SB_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2d2trZXFpY2VqZnVxY3pjbGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDkyMDMsImV4cCI6MjExMDY4NTIwM30.QzR4DDlBlfQva6hQWtdyXXZK1PCnBCT73XAifwVbMSs";
+
+  const LS_POSTS_KEY = "nesru_restored_posts_v1";
+  const LS_PEOPLE_KEY = "nesru_restored_people_v1";
+  const LS_CHAT_KEY = "nesru_restored_chat_v1";
+  const LS_SOCIAL_KEY = "nesru_restored_social_v1";
+
+  let sbClient = null;
+  let activeUser = null;
+  let activeFilter = "all";
+  let activeChatTarget = "";
+
+  function ensureClient() {
+    localStorage.setItem("nm_custom_supabase_url", SB_URL);
+    localStorage.setItem("nm_custom_supabase_anon_key", SB_KEY);
+    localStorage.setItem("supabase_anon_key", SB_KEY);
+    localStorage.setItem("nm_sb_key", SB_KEY);
+
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      if (!sbClient) {
+        sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+      }
+      window.supabaseClient = sbClient;
+      window.sb = sbClient;
+      window._supabase = sbClient;
+    }
+    return sbClient;
+  }
+
+  function esc(v) {
+    return String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function toast(msg) {
+    if (typeof window.showToast === "function") {
+      window.showToast(msg);
+      return;
+    }
+    const el = document.getElementById("toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2400);
+  }
+
+  function loadLocalJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function saveLocalJson(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {}
+  }
+
+  function getSocialState() {
+    return loadLocalJson(LS_SOCIAL_KEY, {
+      following: [],
+      friends: [],
+      incomingRequests: [],
+      likes: {}
+    });
+  }
+
+  function saveSocialState(s) {
+    saveLocalJson(LS_SOCIAL_KEY, s);
+  }
+
+  function getPostsList() {
+    let posts = loadLocalJson(LS_POSTS_KEY, null);
+    if (!Array.isArray(posts)) {
+      try {
+        if (typeof window.state !== "undefined" && Array.isArray(window.state.posts)) {
+          posts = window.state.posts;
+        }
+      } catch (e) {}
+    }
+    if (!Array.isArray(posts) || !posts.length) {
+      posts = [
+        {
+          id: "post-welcome-1",
+          author: "Nesru Michael",
+          author_email: "nesrumichael@gmail.com",
+          title: "Baga Nagaan Dhuftan — Nesru Michael",
+          body: "Feed, Like, Comment, Share, Follow, Add Friend fi Live Chat hundinuu hojjechaa jira.",
+          image_url: "",
+          created_at: new Date().toISOString(),
+          likes: [],
+          comments: [
+            { id: "c1", author: "Nesru Michael", text: "Afaan Oromoo / English wal-qunnamtii gaarii!" }
+          ],
+          shares: 0
+        }
+      ];
+      saveLocalJson(LS_POSTS_KEY, posts);
+    }
+    return posts;
+  }
+
+  function getPeopleList() {
+    let people = loadLocalJson(LS_PEOPLE_KEY, null);
+    if (!Array.isArray(people)) {
+      try {
+        if (typeof window.state !== "undefined" && Array.isArray(window.state.profiles)) {
+          people = window.state.profiles;
+        }
+      } catch (e) {}
+    }
+    if (!Array.isArray(people) || !people.length) {
+      people = [
+        {
+          id: "u-nesru",
+          full_name: "Nesru Michael",
+          email: "nesrumichael@gmail.com",
+          bio: "Barataa waggaa sadaffaa Sagantaa Barnoota Educational planning and management Oda Bultum University."
+        },
+        {
+          id: "u-rammis",
+          full_name: "Rammis Nas",
+          email: "rammis910@gmail.com",
+          bio: "Web & PWA Developer."
+        }
+      ];
+      saveLocalJson(LS_PEOPLE_KEY, people);
+    }
+    return people;
+  }
+
+  function getChatMessages() {
+    let msgs = loadLocalJson(LS_CHAT_KEY, null);
+    if (!Array.isArray(msgs)) {
+      msgs = [
+        {
+          id: "m-1",
+          sender_email: "nesrumichael@gmail.com",
+          sender_name: "Nesru Michael",
+          target: "",
+          text: "Akkam jirtu! Chat waliinii irratti ergaa erguu dandeessu.",
+          created_at: new Date().toISOString()
+        }
+      ];
+      saveLocalJson(LS_CHAT_KEY, msgs);
+    }
+    return msgs;
+  }
+
+  function attachLoginSupabaseCard() {
+    if (document.getElementById("nm-login-sb-card")) return;
+    const gateBox =
+      document.querySelector("#nm-auth-gate .nm-auth-box") ||
+      document.querySelector("#nm-auth-gate-screen .nm-gate-card") ||
+      document.getElementById("nm-auth-gate");
+    if (!gateBox) return;
+
+    const div = document.createElement("div");
+    div.id = "nm-login-sb-card";
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+        <strong>🗄️ Supabase Status</strong>
+        <span id="nm-sb-live-badge" style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">Connected</span>
+      </div>
+      <div class="nm-restore-line"><strong>URL:</strong> ${esc(SB_URL)}</div>
+      <div class="nm-restore-line"><strong>Anon Key:</strong> ${esc(SB_KEY.slice(0, 16))}...${esc(SB_KEY.slice(-10))}</div>
+      <div class="nm-restore-line"><strong>Haala:</strong> <span id="nm-sb-live-msg">Qophii dha</span></div>
+      <div class="nm-restore-btns">
+        <button type="button" class="btn btn-primary btn-sm" onclick="nmCheckSbConnection()">🔄 Haaromsi</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="nmCheckSbTables()">📊 Tables Qori</button>
+      </div>
+    `;
+    gateBox.appendChild(div);
+  }
+
+  window.nmCheckSbConnection = async function () {
+    const msgEl = document.getElementById("nm-sb-live-msg");
+    const c = ensureClient();
+    if (!c || !c.auth) {
+      if (msgEl) msgEl.textContent = "Supabase client hin fe'amne.";
+      return;
+    }
+    const { data, error } = await c.auth.getSession();
+    if (error) {
+      if (msgEl) msgEl.textContent = "Error: " + error.message;
+      return;
+    }
+    if (msgEl) {
+      msgEl.textContent = data && data.session && data.session.user
+        ? "Seentaniirtu: " + data.session.user.email
+        : "Connected (Seenuuf qophii dha)";
+    }
+  };
+
+  window.nmCheckSbTables = async function () {
+    const msgEl = document.getElementById("nm-sb-live-msg");
+    const c = ensureClient();
+    if (!c) return;
+    if (msgEl) msgEl.textContent = "Tables qoraa jira...";
+    const r1 = await c.from("profiles").select("id").limit(1);
+    const r2 = await c.from("posts").select("id").limit(1);
+    const s1 = r1.error ? "profiles: ❌ (" + r1.error.message + ")" : "profiles: ✅";
+    const s2 = r2.error ? "posts: ❌ (" + r2.error.message + ")" : "posts: ✅";
+    if (msgEl) msgEl.textContent = s1 + " | " + s2;
+  };
+
+  function syncSessionAndGate(user) {
+    activeUser = user || null;
+    const gate = document.getElementById("nm-auth-gate") || document.getElementById("nm-auth-gate-screen");
+    if (activeUser) {
+      if (gate) gate.classList.add("hidden");
+      document.body.style.overflow = "";
+      const tag = document.getElementById("feed-user-tag");
+      if (tag) tag.textContent = activeUser.email || "User";
+      const pEmail = document.getElementById("profile-email");
+      const pName = document.getElementById("profile-name");
+      if (pEmail) pEmail.textContent = activeUser.email || "";
+      if (pName) {
+        pName.textContent =
+          (activeUser.user_metadata && activeUser.user_metadata.full_name) ||
+          (activeUser.email ? activeUser.email.split("@")[0] : "Nesru Michael");
+      }
+
+      // Ensure current user appears in people directory
+      const people = getPeopleList();
+      if (!people.some((u) => (u.email || "").toLowerCase() === (activeUser.email || "").toLowerCase())) {
+        people.unshift({
+          id: activeUser.id,
+          full_name:
+            (activeUser.user_metadata && activeUser.user_metadata.full_name) ||
+            (activeUser.email ? activeUser.email.split("@")[0] : "User"),
+          email: activeUser.email || "",
+          bio: ""
+        });
+        saveLocalJson(LS_PEOPLE_KEY, people);
+      }
+    } else {
+      if (gate) gate.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+    renderAllFeatures();
+  }
+
+  window.setGateMode = function (mode) {
+    const isSignup = mode === "signup";
+    const loginBtn = document.getElementById("gate-tab-login");
+    const signupBtn = document.getElementById("gate-tab-signup");
+    const nameGroup = document.getElementById("gate-name-group");
+    const submitBtn = document.getElementById("gate-submit-btn");
+    const msg = document.getElementById("gate-msg");
+
+    if (loginBtn) loginBtn.classList.toggle("active", !isSignup);
+    if (signupBtn) signupBtn.classList.toggle("active", isSignup);
+    if (nameGroup) nameGroup.classList.toggle("hidden", !isSignup);
+    if (submitBtn) submitBtn.textContent = isSignup ? "Sign Up" : "Seeni";
+    if (msg) msg.textContent = "";
+    window.__nmGateMode = isSignup ? "signup" : "login";
+  };
+
+  window.submitGateAuth = async function (e) {
+    if (e) e.preventDefault();
+    const c = ensureClient();
+    const msg = document.getElementById("gate-msg");
+    const email = (document.getElementById("gate-email")?.value || "").trim();
+    const password = document.getElementById("gate-password")?.value || "";
+    const fullName = (document.getElementById("gate-name")?.value || "").trim();
+    const isSignup = window.__nmGateMode === "signup";
+
+    if (!c || !c.auth) {
+      if (msg) msg.textContent = "Supabase client hin fe'amne.";
+      return;
+    }
+    if (!email || !password) {
+      if (msg) msg.textContent = "Email fi Password guuti.";
+      return;
+    }
+
+    if (msg) msg.textContent = isSignup ? "Account uumaa jira..." : "Seenaa jira...";
+
+    if (isSignup) {
+      const { data, error } = await c.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName || email.split("@")[0] } }
+      });
+      if (error) {
+        if (msg) msg.textContent = "Dogoggora Sign Up: " + error.message;
+        return;
+      }
+      if (data && data.session && data.session.user) {
+        syncSessionAndGate(data.session.user);
+      } else {
+        if (msg) msg.textContent = "Account uumameera! Amma 'Seeni (Login)' tuqii seeni.";
+        window.setGateMode("login");
+      }
+    } else {
+      const { data, error } = await c.auth.signInWithPassword({ email, password });
+      if (error) {
+        if (msg) msg.textContent = "Dogoggora Sign In: " + error.message;
+        return;
+      }
+      if (data && data.user) {
+        syncSessionAndGate(data.user);
+      }
+    }
+  };
+
+  window.handleLogout = async function () {
+    const c = ensureClient();
+    if (c && c.auth) {
+      await c.auth.signOut().catch(() => {});
+    }
+    syncSessionAndGate(null);
+    toast("Ba'aniirtu (Logged out).");
+  };
+
+  window.navigateTo = function (viewId) {
+    document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+    const target = document.getElementById(viewId);
+    if (target) target.classList.add("active");
+    document.querySelectorAll(".nav-item").forEach((b) => {
+      b.classList.toggle("active", b.dataset.target === viewId);
+    });
+    renderAllFeatures();
+  };
+
+  window.setFeedFilter = function (filter) {
+    activeFilter = filter === "following" ? "following" : "all";
+    document.getElementById("filter-all")?.classList.toggle("active", activeFilter === "all");
+    document.getElementById("filter-following")?.classList.toggle("active", activeFilter === "following");
+    renderPosts();
+  };
+
+  window.handleCreatePost = async function (e) {
+    if (e) e.preventDefault();
+    const title = (document.getElementById("post-title")?.value || "").trim();
+    const body = (document.getElementById("post-body")?.value || "").trim();
+    const imageUrl = (document.getElementById("post-image")?.value || "").trim();
+    if (!title || !body) return;
+
+    const authorEmail = activeUser?.email || "nesrumichael@gmail.com";
+    const authorName =
+      activeUser?.user_metadata?.full_name || authorEmail.split("@")[0] || "Nesru Michael";
+
+    const newPost = {
+      id: "post-" + Date.now(),
+      user_id: activeUser?.id || "",
+      author: authorName,
+      author_email: authorEmail,
+      title,
+      body,
+      image_url: imageUrl,
+      created_at: new Date().toISOString(),
+      likes: [],
+      comments: [],
+      shares: 0
+    };
+
+    const posts = getPostsList();
+    posts.unshift(newPost);
+    saveLocalJson(LS_POSTS_KEY, posts);
+
+    // Try syncing to Supabase if table exists
+    const c = ensureClient();
+    if (c && activeUser) {
+      await c
+        .from("posts")
+        .insert({
+          user_id: activeUser.id,
+          author_email: authorEmail,
+          title,
+          body,
+          image_url: imageUrl || null
+        })
+        .then(() => {})
+        .catch(() => {});
+    }
+
+    document.getElementById("post-form")?.reset();
+    toast("Maxxansi kee maxxanfameera!");
+    renderPosts();
+  };
+
+  window.togglePostLike = function (postId) {
+    const me = activeUser?.email || "guest";
+    const posts = getPostsList();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.likes = Array.isArray(p.likes) ? p.likes : [];
+    const idx = p.likes.indexOf(me);
+    if (idx >= 0) p.likes.splice(idx, 1);
+    else p.likes.push(me);
+    saveLocalJson(LS_POSTS_KEY, posts);
+    renderPosts();
+  };
+
+  window.addPostComment = function (e, postId) {
+    if (e) e.preventDefault();
+    const input = document.getElementById("comment-input-" + postId);
+    const text = (input?.value || "").trim();
+    if (!text) return;
+
+    const posts = getPostsList();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.comments = Array.isArray(p.comments) ? p.comments : [];
+    p.comments.push({
+      id: "c-" + Date.now(),
+      author: activeUser?.email || "User",
+      text
+    });
+    saveLocalJson(LS_POSTS_KEY, posts);
+    if (input) input.value = "";
+    renderPosts();
+  };
+
+  window.sharePostItem = function (postId) {
+    const posts = getPostsList();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.shares = (p.shares || 0) + 1;
+    saveLocalJson(LS_POSTS_KEY, posts);
+    const shareText = (p.title || "Post") + " - " + (p.body || "");
+    navigator.clipboard?.writeText(shareText).catch(() => {});
+    toast("Post share ta'eera (copied)!");
+    renderPosts();
+  };
+
+  function renderPosts() {
+    const list = document.getElementById("posts-list");
+    if (!list) return;
+    const social = getSocialState();
+    const me = activeUser?.email || "guest";
+
+    let posts = getPostsList();
+    if (activeFilter === "following") {
+      posts = posts.filter((p) => social.following.includes((p.author_email || "").toLowerCase()));
+    }
+
+    const statPosts = document.getElementById("stat-posts");
+    if (statPosts) {
+      statPosts.textContent = String(
+        getPostsList().filter((p) => !activeUser || p.author_email === activeUser.email).length
+      );
+    }
+
+    if (!posts.length) {
+      list.innerHTML = '<div class="card muted">Maxxansi hin jiru.</div>';
+      return;
+    }
+
+    list.innerHTML = posts
+      .map((p) => {
+        const likes = Array.isArray(p.likes) ? p.likes : [];
+        const liked = likes.includes(me);
+        const comments = Array.isArray(p.comments) ? p.comments : [];
+        const isMine = activeUser && p.author_email === activeUser.email;
+
+        return `
+          <article class="post-card" data-post-id="${esc(p.id)}">
+            <div class="post-header">
+              <div class="post-author-info">
+                <div class="avatar-sm">${esc((p.author || p.author_email || "NM").slice(0, 2).toUpperCase())}</div>
+                <div>
+                  <strong>${esc(p.author || p.author_email || "User")}</strong>
+                  <div class="status-sub">${esc(p.author_email || "")}</div>
+                </div>
+              </div>
+              ${
+                isMine
+                  ? `<button type="button" class="btn btn-outline btn-sm" onclick="deleteLocalPost('${esc(p.id)}')">🗑️ Delete</button>`
+                  : ""
+              }
+            </div>
+
+            ${p.title ? `<div class="post-title">${esc(p.title)}</div>` : ""}
+            <div class="post-body">${esc(p.body || "")}</div>
+            ${p.image_url ? `<img class="post-img" src="${esc(p.image_url)}" alt="Post image" />` : ""}
+
+            <div class="post-actions">
+              <button type="button" class="action-btn ${liked ? "liked" : ""}" onclick="togglePostLike('${esc(p.id)}')">
+                👍 Like (${likes.length})
+              </button>
+              <button type="button" class="action-btn" onclick="document.getElementById('comment-input-${esc(p.id)}')?.focus()">
+                💬 Comment (${comments.length})
+              </button>
+              <button type="button" class="action-btn" onclick="sharePostItem('${esc(p.id)}')">
+                ↗️ Share (${p.shares || 0})
+              </button>
+            </div>
+
+            <div class="comments-box">
+              ${
+                comments.length
+                  ? comments
+                      .map(
+                        (c) =>
+                          `<div class="comment-item"><span><strong>${esc(c.author)}:</strong> ${esc(c.text)}</span></div>`
+                      )
+                      .join("")
+                  : `<div class="muted">Comment hin jiru.</div>`
+              }
+              <form class="comment-form" onsubmit="addPostComment(event, '${esc(p.id)}')">
+                <input type="text" id="comment-input-${esc(p.id)}" placeholder="Comment barreessi..." required />
+                <button type="submit" class="btn btn-primary btn-sm">Ergi</button>
+              </form>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  window.deleteLocalPost = function (postId) {
+    const posts = getPostsList().filter((p) => String(p.id) !== String(postId));
+    saveLocalJson(LS_POSTS_KEY, posts);
+    toast("Maxxansi haqameera!");
+    renderPosts();
+  };
+
+  window.toggleFollowPerson = function (email) {
+    const key = (email || "").toLowerCase();
+    if (!key) return;
+    const s = getSocialState();
+    const idx = s.following.indexOf(key);
+    if (idx >= 0) {
+      s.following.splice(idx, 1);
+      toast("Unfollowed");
+    } else {
+      s.following.push(key);
+      toast("Following!");
+    }
+    saveSocialState(s);
+    renderPeople();
+    renderPosts();
+  };
+
+  window.toggleFriendPerson = function (email) {
+    const key = (email || "").toLowerCase();
+    if (!key) return;
+    const s = getSocialState();
+    const idx = s.friends.indexOf(key);
+    if (idx >= 0) {
+      s.friends.splice(idx, 1);
+      toast("Friend removed");
+    } else {
+      s.friends.push(key);
+      toast("Added as Friend!");
+    }
+    saveSocialState(s);
+    renderPeople();
+    syncChatSelect();
+  };
+
+  window.renderPeople = function () {
+    const list = document.getElementById("people-list");
+    if (!list) return;
+    const q = (document.getElementById("people-search")?.value || "").trim().toLowerCase();
+    const s = getSocialState();
+    const myEmail = (activeUser?.email || "").toLowerCase();
+
+    const people = getPeopleList().filter((u) => {
+      const em = (u.email || "").toLowerCase();
+      if (myEmail && em === myEmail) return false;
+      if (!q) return true;
+      return ((u.full_name || "") + " " + em).toLowerCase().includes(q);
+    });
+
+    const statFollowers = document.getElementById("stat-followers");
+    const statFriends = document.getElementById("stat-friends");
+    if (statFollowers) statFollowers.textContent = String(s.following.length);
+    if (statFriends) statFriends.textContent = String(s.friends.length);
+
+    if (!people.length) {
+      list.innerHTML = '<div class="card muted">Namoonni biroo hin argamne.</div>';
+      return;
+    }
+
+    list.innerHTML = people
+      .map((u) => {
+        const em = (u.email || "").toLowerCase();
+        const isFollowing = s.following.includes(em);
+        const isFriend = s.friends.includes(em);
+        return `
+          <div class="person-card">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar-sm">${esc((u.full_name || em || "U").slice(0, 2).toUpperCase())}</div>
+              <div>
+                <strong>${esc(u.full_name || u.email || "User")}</strong>
+                <div class="muted">${esc(u.email || "")}</div>
+                ${u.bio ? `<div class="muted" style="margin-top:2px;">${esc(u.bio)}</div>` : ""}
+              </div>
+            </div>
+            <div class="person-actions">
+              <button type="button" class="btn btn-sm ${isFollowing ? "btn-primary" : "btn-outline"}" onclick="toggleFollowPerson('${esc(em)}')">
+                ${isFollowing ? "✓ Following" : "+ Follow"}
+              </button>
+              <button type="button" class="btn btn-sm ${isFriend ? "btn-success" : "btn-outline"}" onclick="toggleFriendPerson('${esc(em)}')">
+                ${isFriend ? "🤝 Friend" : "+ Add Friend"}
+              </button>
+              <button type="button" class="btn btn-sm btn-outline" onclick="openDirectChatFromPeople('${esc(em)}')">
+                💬 Chat
+              </button>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  };
+
+  function syncChatSelect() {
+    const sel = document.getElementById("chat-target-select");
+    if (!sel) return;
+    const people = getPeopleList();
+    const myEmail = (activeUser?.email || "").toLowerCase();
+    const prev = activeChatTarget;
+    sel.innerHTML = '<option value="">🌍 Chat Waliinii (Hundaa)</option>';
+    people.forEach((u) => {
+      const em = (u.email || "").toLowerCase();
+      if (!em || em === myEmail) return;
+      const opt = document.createElement("option");
+      opt.value = em;
+      opt.textContent = "💬 " + (u.full_name || em);
+      sel.appendChild(opt);
+    });
+    sel.value = prev;
+  }
+
+  window.openDirectChatFromPeople = function (email) {
+    activeChatTarget = (email || "").toLowerCase();
+    syncChatSelect();
+    window.navigateTo("view-chat");
+    renderChat();
+  };
+
+  window.switchChatTarget = function (val) {
+    activeChatTarget = (val || "").toLowerCase();
+    renderChat();
+  };
+
+  window.handleSendMessage = function (e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById("chat-input");
+    const text = (input?.value || "").trim();
+    if (!text) return;
+
+    const senderEmail = (activeUser?.email || "nesrumichael@gmail.com").toLowerCase();
+    const msgs = getChatMessages();
+    msgs.push({
+      id: "m-" + Date.now(),
+      sender_email: senderEmail,
+      sender_name: activeUser?.user_metadata?.full_name || senderEmail.split("@")[0],
+      target: activeChatTarget,
+      text,
+      created_at: new Date().toISOString()
+    });
+    saveLocalJson(LS_CHAT_KEY, msgs);
+    if (input) input.value = "";
+    renderChat();
+  };
+
+  function renderChat() {
+    syncChatSelect();
+    const box = document.getElementById("chat-messages");
+    const titleEl = document.getElementById("chat-room-title");
+    if (!box) return;
+
+    const myEmail = (activeUser?.email || "nesrumichael@gmail.com").toLowerCase();
+    const allMsgs = getChatMessages();
+
+    const filtered = activeChatTarget
+      ? allMsgs.filter(
+          (m) =>
+            (m.sender_email === myEmail && m.target === activeChatTarget) ||
+            (m.sender_email === activeChatTarget && m.target === myEmail)
+        )
+      : allMsgs.filter((m) => !m.target);
+
+    if (titleEl) {
+      titleEl.textContent = activeChatTarget
+        ? "Chat Dhuunfaa: " + activeChatTarget
+        : "Chat Waliinii (Public Group)";
+    }
+
+    if (!filtered.length) {
+      box.innerHTML = '<div class="muted">Ergaan hin jiru. Ergaa jalqabaa ergi!</div>';
+      return;
+    }
+
+    box.innerHTML = filtered
+      .map((m) => {
+        const mine = m.sender_email === myEmail;
+        return `
+          <div class="msg-bubble ${mine ? "mine" : ""}">
+            <div class="msg-meta">${esc(m.sender_name || m.sender_email)}</div>
+            <div>${esc(m.text)}</div>
+          </div>
+        `;
+      })
+      .join("");
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderAllFeatures() {
+    renderPosts();
+    renderPeople();
+    renderChat();
+  }
+
+  window.addEventListener("DOMContentLoaded", async function () {
+    const c = ensureClient();
+    attachLoginSupabaseCard();
+    renderAllFeatures();
+
+    if (c && c.auth) {
+      const { data } = await c.auth.getSession();
+      syncSessionAndGate(data?.session?.user || null);
+      c.auth.onAuthStateChange(function (_ev, session) {
+        syncSessionAndGate(session?.user || null);
+      });
+    } else {
+      syncSessionAndGate(null);
+    }
+    window.nmCheckSbConnection();
+  });
+})();
 </script>
 </body>
   </html>
