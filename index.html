@@ -2431,6 +2431,194 @@
     }
   });
 })();
-</script>
+</script><!-- ==========================================================
+     NESRU MICHAEL SIGN-IN FIX (APPEND BEFORE </body>)
+     ========================================================== -->
+<script>
+(function () {
+  const NM_FIXED_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
+  // Yoo barbaadde Anon Key kee asitti galchi:
+  const NM_FIXED_KEY = "";
+
+  function nmEnsureSupabaseSdk(cb) {
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      cb();
+      return;
+    }
+    const existing = document.querySelector('script[src*="supabase-js"]');
+    if (existing) {
+      existing.addEventListener("load", cb, { once: true });
+      setTimeout(cb, 800);
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    s.async = true;
+    s.onload = cb;
+    s.onerror = cb;
+    document.head.appendChild(s);
+  }
+
+  function nmResolveKey() {
+    const inp = document.querySelector(
+      'input[id*="anon" i], input[id*="key" i], input[placeholder*="anon" i], input[placeholder*="key" i]'
+    );
+    const k =
+      (NM_FIXED_KEY && NM_FIXED_KEY.trim()) ||
+      (inp && inp.value ? inp.value.trim() : "") ||
+      localStorage.getItem("supabase_anon_key") ||
+      localStorage.getItem("nm_sb_key") ||
+      localStorage.getItem("sb_anon_key") ||
+      "";
+    if (k) {
+      localStorage.setItem("supabase_anon_key", k);
+      localStorage.setItem("nm_sb_key", k);
+    }
+    return k;
+  }
+
+  function nmGetWorkingClient() {
+    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
+    if (window.sb && window.sb.auth) return window.sb;
+    if (window._supabase && window._supabase.auth) return window._supabase;
+
+    const key = nmResolveKey();
+    if (window.supabase && typeof window.supabase.createClient === "function" && key) {
+      const client = window.supabase.createClient(NM_FIXED_URL, key);
+      window.supabaseClient = client;
+      window.sb = client;
+      return client;
+    }
+    return null;
+  }
+
+  function nmHideGateNow() {
+    const gate = document.getElementById("nm-auth-gate-screen");
+    if (gate) {
+      gate.classList.add("hidden");
+      gate.style.setProperty("display", "none", "important");
+    }
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+  }
+
+  function nmShowGateNow() {
+    const gate = document.getElementById("nm-auth-gate-screen");
+    if (gate) {
+      gate.classList.remove("hidden");
+      gate.style.setProperty("display", "flex", "important");
+    }
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+  }
+
+  window.nmGateSubmitAuth = async function () {
+    const statusEl = document.getElementById("nm-gate-status");
+    const btn = document.getElementById("nm-gate-submit-btn");
+    const emailEl = document.getElementById("nm-gate-email");
+    const passEl = document.getElementById("nm-gate-password");
+    const nameEl = document.getElementById("nm-gate-fullname");
+
+    const email = emailEl ? emailEl.value.trim() : "";
+    const password = passEl ? passEl.value : "";
+    const fullName = nameEl ? nameEl.value.trim() : "";
+    const mode = (btn && /uumi/i.test(btn.textContent || "")) ? "signup" : "login";
+
+    if (!email || !password) {
+      if (statusEl) statusEl.textContent = "Maaloo Email fi Password guuti.";
+      return;
+    }
+
+    if (statusEl) statusEl.textContent = mode === "signup" ? "Account uumaa jira..." : "Seenaa jira...";
+    if (btn) btn.disabled = true;
+
+    nmEnsureSupabaseSdk(async function () {
+      try {
+        const sb = nmGetWorkingClient();
+        if (!sb || !sb.auth) {
+          if (statusEl) {
+            statusEl.textContent =
+              "Anon Key hin argamne. NM_FIXED_KEY keessa ykn sanduuqa Supabase key keessa galchi.";
+          }
+          if (btn) btn.disabled = false;
+          return;
+        }
+
+        if (mode === "signup") {
+          const { data, error } = await sb.auth.signUp({
+            email: email,
+            password: password,
+            options: { data: { full_name: fullName || email.split("@")[0] } }
+          });
+          if (error) {
+            if (statusEl) statusEl.textContent = "Dogoggora Sign Up: " + error.message;
+            if (btn) btn.disabled = false;
+            return;
+          }
+          if (data && data.user) {
+            await sb
+              .from("profiles")
+              .upsert({
+                id: data.user.id,
+                email: email,
+                full_name: fullName || email.split("@")[0]
+              })
+              .catch(function () {});
+          }
+          if (data && data.session) {
+            if (statusEl) statusEl.textContent = "Galmaa'uun milkaa'eera! Seenaa jira...";
+            nmHideGateNow();
+          } else {
+            if (statusEl) {
+              statusEl.textContent =
+                "Account uumameera! Yoo email confirmation hin barbaachifne 'Seeni (Login)' tuqii seeni.";
+            }
+          }
+        } else {
+          const { data, error } = await sb.auth.signInWithPassword({
+            email: email,
+            password: password
+          });
+          if (error) {
+            if (statusEl) statusEl.textContent = "Dogoggora Sign In: " + error.message;
+            if (btn) btn.disabled = false;
+            return;
+          }
+          if (data && data.user) {
+            if (statusEl) statusEl.textContent = "Milkaa'inaan seentaniirtu!";
+            nmHideGateNow();
+          } else {
+            if (statusEl) statusEl.textContent = "Session hin uumamne. Email/Password irra deebi'ii ilaali.";
+          }
+        }
+      } catch (e) {
+        if (statusEl) statusEl.textContent = "Rakkoon uumame: " + (e && e.message ? e.message : e);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  };
+
+  nmEnsureSupabaseSdk(async function () {
+    const sb = nmGetWorkingClient();
+    if (!sb || !sb.auth) return;
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data && data.session && data.session.user) {
+        nmHideGateNow();
+      } else {
+        nmShowGateNow();
+      }
+      sb.auth.onAuthStateChange(function (_event, session) {
+        if (session && session.user) {
+          nmHideGateNow();
+        } else {
+          nmShowGateNow();
+        }
+      });
+    } catch (e) {}
+  });
+})();
+    </script>
 </body>
           </html>
