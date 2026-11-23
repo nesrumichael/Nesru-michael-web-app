@@ -4457,6 +4457,225 @@
     renderExpandContent();
   });
 })();
-</script>
+</script><!-- ==========================================================
+     NESRU MICHAEL UNIVERSAL PWA INSTALLER & CROSS-DEVICE FIX
+     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
+     ========================================================== -->
+<style id="nm-pwa-install-style">
+  #nm-pwa-install-bar {
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    z-index: 2147483646;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 2px solid #2563eb;
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    font-size: 13px;
+    max-width: calc(100vw - 28px);
+  }
+  #nm-pwa-install-btn {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #nm-pwa-copy-link-btn {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid #475569;
+    border-radius: 9px;
+    padding: 7px 10px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+(function () {
+  let deferredInstallPrompt = null;
+
+  function nmCreateFallbackIconDataUrl(size) {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#1877f2";
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold " + Math.round(size * 0.42) + "px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("NM", size / 2, size / 2 + size * 0.02);
+      return canvas.toDataURL("image/png");
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function nmEnsureManifestAndMeta() {
+    // Viewport & mobile web app meta tags
+    if (!document.querySelector('meta[name="viewport"]')) {
+      const vp = document.createElement("meta");
+      vp.name = "viewport";
+      vp.content = "width=device-width, initial-scale=1, maximum-scale=5";
+      document.head.appendChild(vp);
+    }
+
+    if (!document.querySelector('meta[name="theme-color"]')) {
+      const tc = document.createElement("meta");
+      tc.name = "theme-color";
+      tc.content = "#1877f2";
+      document.head.appendChild(tc);
+    }
+
+    // If manifest link doesn't exist, create one dynamically with valid PNG icons
+    if (!document.querySelector('link[rel="manifest"]')) {
+      const icon192 = nmCreateFallbackIconDataUrl(192);
+      const icon512 = nmCreateFallbackIconDataUrl(512);
+      const manifestObj = {
+        name: "Nesru Michael",
+        short_name: "Nesru Michael",
+        description: "Nesru Michael Social & Community Web App",
+        start_url: "./",
+        scope: "./",
+        display: "standalone",
+        background_color: "#0f172a",
+        theme_color: "#1877f2",
+        icons: [
+          ...(icon192 ? [{ src: icon192, sizes: "192x192", type: "image/png" }] : []),
+          ...(icon512 ? [{ src: icon512, sizes: "512x512", type: "image/png" }] : [])
+        ]
+      };
+      try {
+        const blob = new Blob([JSON.stringify(manifestObj)], { type: "application/manifest+json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = url;
+        document.head.appendChild(link);
+      } catch (e) {}
+    }
+  }
+
+  function nmRegisterServiceWorkerSafe() {
+    if (!("serviceWorker" in navigator)) return;
+    if (location.protocol !== "https:" && location.hostname !== "localhost") return;
+
+    window.addEventListener("load", function () {
+      // First try existing sw.js if present, otherwise register a minimal inline SW blob
+      navigator.serviceWorker.register("./sw.js").catch(function () {
+        try {
+          const swCode = `
+            self.addEventListener("install", function (event) {
+              self.skipWaiting();
+            });
+            self.addEventListener("activate", function (event) {
+              event.waitUntil(self.clients.claim());
+            });
+            self.addEventListener("fetch", function (event) {
+              if (event.request.method !== "GET") return;
+              event.respondWith(
+                fetch(event.request).catch(function () {
+                  return caches.match(event.request);
+                })
+              );
+            });
+          `;
+          const blob = new Blob([swCode], { type: "application/javascript" });
+          const swUrl = URL.createObjectURL(blob);
+          navigator.serviceWorker.register(swUrl).catch(function () {});
+        } catch (e) {}
+      });
+    });
+  }
+
+  function nmIsIosSafari() {
+    const ua = navigator.userAgent || "";
+    const isIos = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isStandalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    return isIos && !isStandalone;
+  }
+
+  function nmRenderInstallBar() {
+    if (document.getElementById("nm-pwa-install-bar")) return;
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
+
+    const bar = document.createElement("div");
+    bar.id = "nm-pwa-install-bar";
+    bar.innerHTML = `
+      <span>📱 <strong>Nesru Michael</strong></span>
+      <button type="button" id="nm-pwa-install-btn" onclick="nmTriggerInstallApp()">📲 Install App</button>
+      <button type="button" id="nm-pwa-copy-link-btn" onclick="nmCopyShareLink()">🔗 Link Copy</button>
+    `;
+    document.body.appendChild(bar);
+  }
+
+  window.nmTriggerInstallApp = async function () {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice.catch(function () {
+        return null;
+      });
+      deferredInstallPrompt = null;
+      if (choice && choice.outcome === "accepted") {
+        const bar = document.getElementById("nm-pwa-install-bar");
+        if (bar) bar.remove();
+      }
+      return;
+    }
+
+    if (nmIsIosSafari()) {
+      alert("iPhone / iPad irratti install gochuuf: qabduu Share (⬆️) gadii tuqii 'Add to Home Screen' filadhu.");
+      return;
+    }
+
+    alert("Browser menu (⋮ ykn ...) keessaa 'Install app' ykn 'Add to Home screen' tuqiitii install godhi.");
+  };
+
+  window.nmCopyShareLink = function () {
+    const shareUrl = window.location.href;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(function () {
+        alert("Linkii copy ta'eera: " + shareUrl);
+      }).catch(function () {
+        prompt("Linkii kana copy godhi:", shareUrl);
+      });
+    } else {
+      prompt("Linkii kana copy godhi:", shareUrl);
+    }
+  };
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    nmRenderInstallBar();
+  });
+
+  window.addEventListener("appinstalled", function () {
+    const bar = document.getElementById("nm-pwa-install-bar");
+    if (bar) bar.remove();
+  });
+
+  nmEnsureManifestAndMeta();
+  nmRegisterServiceWorkerSafe();
+
+  window.addEventListener("DOMContentLoaded", function () {
+    nmRenderInstallBar();
+  });
+})();
+                                                        </script>
 </body>
   </html>
