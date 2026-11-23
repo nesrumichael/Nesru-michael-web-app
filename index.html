@@ -2686,6 +2686,78 @@
     window.nmCheckSbConnection();
   });
 })();
+</script><!-- ==========================================================
+     NESRU MICHAEL PERMANENT BUILT-IN SUPABASE CONNECTION
+     APPEND BEFORE </body> (NO RE-CONNECT PROMPT ON ANY USER/UPDATE)
+     ========================================================== -->
+<script>
+(function () {
+  const NM_LOCKED_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
+  const NM_LOCKED_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2d2trZXFpY2VqZnVxY3pjbGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDkyMDMsImV4cCI6MjExMDY4NTIwM30.QzR4DDlBlfQva6hQWtdyXXZK1PCnBCT73XAifwVbMSs";
+
+  function nmSyncLockedStorage() {
+    try {
+      localStorage.setItem("nm_custom_supabase_url", NM_LOCKED_URL);
+      localStorage.setItem("nm_custom_supabase_anon_key", NM_LOCKED_ANON_KEY);
+      localStorage.setItem("supabase_anon_key", NM_LOCKED_ANON_KEY);
+      localStorage.setItem("nm_sb_key", NM_LOCKED_ANON_KEY);
+      localStorage.setItem("sb_anon_key", NM_LOCKED_ANON_KEY);
+    } catch (e) {}
+  }
+
+  function nmFillLockedInputs() {
+    document.querySelectorAll("input").forEach((inp) => {
+      const idAndPh = ((inp.id || "") + " " + (inp.placeholder || "") + " " + (inp.name || "")).toLowerCase();
+      if (idAndPh.includes("supabase.co") || idAndPh.includes("project url") || (idAndPh.includes("sb") && idAndPh.includes("url"))) {
+        if (!inp.value) inp.value = NM_LOCKED_URL;
+      }
+      if (idAndPh.includes("anon") || idAndPh.includes("eyj") || (idAndPh.includes("sb") && idAndPh.includes("key"))) {
+        if (!inp.value) inp.value = NM_LOCKED_ANON_KEY;
+      }
+    });
+  }
+
+  function nmEnsureLockedClient() {
+    nmSyncLockedStorage();
+    nmFillLockedInputs();
+
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      if (!window.supabaseClient || !window.supabaseClient.auth) {
+        window.supabaseClient = window.supabase.createClient(NM_LOCKED_URL, NM_LOCKED_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
+        });
+      }
+      window.sb = window.supabaseClient;
+      window._supabase = window.supabaseClient;
+
+      const badge = document.getElementById("cloud-badge");
+      if (badge) {
+        badge.textContent = "Cloud Connected";
+        badge.className = "badge badge-cloud";
+      }
+    }
+  }
+
+  // Battalumatti yeroo koodiin fe'amu fi erga DOM qophaa'ee booda hojjeta
+  nmEnsureLockedClient();
+  window.addEventListener("DOMContentLoaded", function () {
+    nmEnsureLockedClient();
+    setTimeout(nmEnsureLockedClient, 300);
+  });
+
+  // Erga koodii biraa ykn jijjiiramni jiraatee boodas eegaa tura
+  setInterval(function () {
+    if (!window.supabaseClient || !window.supabaseClient.auth) {
+      nmEnsureLockedClient();
+    }
+    nmSyncLockedStorage();
+  }, 1500);
+})();
 </script>
 </body>
   </html>
