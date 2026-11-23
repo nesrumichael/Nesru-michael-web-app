@@ -1240,6 +1240,186 @@
     setTimeout(nmSyncAdminVisibility, 400);
   });
 })();
-</script>
+</script><!-- ==========================================================
+     NESRU MICHAEL OWNER-ONLY ACCESS (rammis910@gmail.com)
+     APPEND BEFORE </body> (DOES NOT HARDCODE PASSWORD)
+     ========================================================== -->
+<style id="nm-owner-only-style">
+  #nm-owner-supabase-box {
+    margin-top: 12px;
+    border: 2px solid #16a34a;
+    border-radius: 12px;
+    padding: 14px;
+    background: #f0fdf4;
+    color: #0f172a;
+  }
+  body.dark-mode #nm-owner-supabase-box {
+    background: #052e16;
+    color: #f8fafc;
+    border-color: #4ade80;
+  }
+  .nm-owner-hidden {
+    display: none !important;
+  }
+</style>
+
+<script>
+(function () {
+  // Email abbaa weebsaayitii qofa (password koodii keessa hin kaa'amu)
+  const NM_OWNER_EMAIL = "rammis910@gmail.com";
+  const NM_SB_URL_KEY = "nm_custom_supabase_url";
+  const NM_SB_KEY_KEY = "nm_custom_supabase_anon_key";
+
+  function nmGetActiveClient() {
+    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
+    if (window.sb && window.sb.auth) return window.sb;
+    if (window._supabase && window._supabase.auth) return window._supabase;
+
+    const url =
+      localStorage.getItem(NM_SB_URL_KEY) ||
+      "https://uvwkkeqicejfuqczclbt.supabase.co";
+    const key =
+      localStorage.getItem(NM_SB_KEY_KEY) ||
+      localStorage.getItem("supabase_anon_key") ||
+      localStorage.getItem("nm_sb_key") ||
+      "";
+
+    if (window.supabase && typeof window.supabase.createClient === "function" && url && key) {
+      const c = window.supabase.createClient(url, key);
+      window.supabaseClient = c;
+      window.sb = c;
+      return c;
+    }
+    return null;
+  }
+
+  function nmRenderOwnerSupabaseBox(isOwner) {
+    const target =
+      document.getElementById("view-auth") ||
+      document.querySelector("main.container") ||
+      document.body;
+
+    let box = document.getElementById("nm-owner-supabase-box");
+    if (!box) {
+      const savedUrl =
+        localStorage.getItem(NM_SB_URL_KEY) ||
+        "https://uvwkkeqicejfuqczclbt.supabase.co";
+      const savedKey =
+        localStorage.getItem(NM_SB_KEY_KEY) ||
+        localStorage.getItem("supabase_anon_key") ||
+        localStorage.getItem("nm_sb_key") ||
+        "";
+
+      box = document.createElement("div");
+      box.id = "nm-owner-supabase-box";
+      box.className = "nm-owner-hidden";
+      box.innerHTML = `
+        <div style="margin-bottom:10px;">
+          <strong>👑 Admin Supabase Control (${NM_OWNER_EMAIL})</strong>
+          <div class="muted">Ati abbaa weebsaayitii waan taateef qofa siif mul'ata.</div>
+        </div>
+        <div class="form-group">
+          <label for="nm-owner-sb-url">Supabase Project URL</label>
+          <input type="url" id="nm-owner-sb-url" value="${savedUrl.replace(/"/g, "&quot;")}" placeholder="https://xxxx.supabase.co" />
+        </div>
+        <div class="form-group">
+          <label for="nm-owner-sb-key">Supabase Anon Key</label>
+          <input type="password" id="nm-owner-sb-key" value="${savedKey.replace(/"/g, "&quot;")}" placeholder="eyJ..." />
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-success btn-sm" onclick="nmOwnerSaveSupabase()">💾 Ol-kaa'i & Wal-qabsiisi</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="nmOwnerTestSupabase()">🔌 Mirkaneessi</button>
+        </div>
+        <div id="nm-owner-sb-status" class="muted" style="margin-top:8px;"></div>
+      `;
+      target.appendChild(box);
+    }
+
+    box.classList.toggle("nm-owner-hidden", !isOwner);
+
+    // Qabduu Supabase kam iyyuu namoota biroo irratti dhoksuu
+    document.querySelectorAll("button, a").forEach((el) => {
+      if (el.closest("#nm-owner-supabase-box")) return;
+      const txt = (el.textContent || "").trim().toLowerCase();
+      if (txt === "supabase cloud" || txt === "🛠️") {
+        el.style.setProperty("display", isOwner ? "" : "none", "important");
+      }
+    });
+  }
+
+  async function nmVerifyOwnerSession() {
+    const sb = nmGetActiveClient();
+    if (!sb || !sb.auth) {
+      nmRenderOwnerSupabaseBox(false);
+      return;
+    }
+
+    try {
+      // Auto-restore session (yeroo biraa yoo deebi'e ofiin seensisa)
+      const { data } = await sb.auth.getSession();
+      const user = data && data.session ? data.session.user : null;
+      const email = (user && user.email ? user.email : "").trim().toLowerCase();
+      const isOwner = email === NM_OWNER_EMAIL.toLowerCase();
+
+      nmRenderOwnerSupabaseBox(isOwner);
+
+      if (isOwner) {
+        const gate = document.getElementById("nm-auth-gate") || document.getElementById("nm-auth-gate-screen");
+        if (gate) gate.classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+    } catch (e) {
+      nmRenderOwnerSupabaseBox(false);
+    }
+  }
+
+  window.nmOwnerSaveSupabase = function () {
+    const url = (document.getElementById("nm-owner-sb-url").value || "").trim();
+    const key = (document.getElementById("nm-owner-sb-key").value || "").trim();
+    const st = document.getElementById("nm-owner-sb-status");
+    if (!url || !key) {
+      st.textContent = "URL fi Anon Key guuti.";
+      return;
+    }
+    localStorage.setItem(NM_SB_URL_KEY, url);
+    localStorage.setItem(NM_SB_KEY_KEY, key);
+    localStorage.setItem("supabase_anon_key", key);
+    localStorage.setItem("nm_sb_key", key);
+
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      const c = window.supabase.createClient(url, key);
+      window.supabaseClient = c;
+      window.sb = c;
+    }
+    st.textContent = "Qindaa'inni Supabase ol-kaa'ameera!";
+    if (typeof showToast === "function") showToast("Supabase qindaa'inni ol-kaa'ameera!");
+  };
+
+  window.nmOwnerTestSupabase = async function () {
+    const st = document.getElementById("nm-owner-sb-status");
+    const sb = nmGetActiveClient();
+    if (!sb || !sb.auth) {
+      st.textContent = "Supabase client hin qophoofne.";
+      return;
+    }
+    const { data, error } = await sb.auth.getUser();
+    if (error) {
+      st.textContent = "Dogoggora: " + error.message;
+    } else {
+      st.textContent = "Wal-qunnamtiin sirrii dha! User: " + (data.user ? data.user.email : "Guest");
+    }
+  };
+
+  window.addEventListener("DOMContentLoaded", function () {
+    nmVerifyOwnerSession();
+    const sb = nmGetActiveClient();
+    if (sb && sb.auth && typeof sb.auth.onAuthStateChange === "function") {
+      sb.auth.onAuthStateChange(function () {
+        nmVerifyOwnerSession();
+      });
+    }
+  });
+})();
+    </script>
 </body>
   </html>
