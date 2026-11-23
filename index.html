@@ -1521,6 +1521,445 @@
   });
   setTimeout(nmAppendToAbout, 400);
 })();
+</script><!-- ==========================================================
+     NESRU MICHAEL AUTH GATE, PEOPLE DIRECTORY & POST EDIT/DELETE
+     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
+     ========================================================== -->
+<style id="nm-auth-gate-styles">
+  #nm-auth-gate-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  #nm-auth-gate-screen.hidden {
+    display: none !important;
+  }
+  .nm-gate-card {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+  }
+  .nm-post-owner-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .nm-user-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+</style>
+
+<!-- 1. FUULA LOGIN / SIGN UP QOFA (YOO HIN SEENIN) -->
+<div id="nm-auth-gate-screen">
+  <div class="nm-gate-card">
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:28px;font-weight:800;color:#1d4ed8;">NM</div>
+      <h2 style="margin:4px 0;">Nesru Michael</h2>
+      <p class="muted" style="margin:0;">Itti fufuuf jalqaba Seeni (Login) ykn Account Uumi (Sign Up).</p>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" id="nm-gate-tab-login" class="btn btn-primary btn-sm" style="flex:1;" onclick="nmGateSetMode('login')">Seeni (Login)</button>
+      <button type="button" id="nm-gate-tab-signup" class="btn btn-outline btn-sm" style="flex:1;" onclick="nmGateSetMode('signup')">Sign Up (Galmaa'i)</button>
+    </div>
+
+    <div id="nm-gate-name-wrap" class="form-group hidden" style="margin-bottom:10px;">
+      <label for="nm-gate-fullname">Maqaa Guutuu</label>
+      <input type="text" id="nm-gate-fullname" placeholder="Maqaa kee barreessi" style="width:100%;" />
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label for="nm-gate-email">Email</label>
+      <input type="email" id="nm-gate-email" placeholder="example@gmail.com" style="width:100%;" />
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label for="nm-gate-password">Password (yoo xiqqaate 6)</label>
+      <input type="password" id="nm-gate-password" placeholder="********" style="width:100%;" />
+    </div>
+
+    <button type="button" id="nm-gate-submit-btn" class="btn btn-primary" style="width:100%;" onclick="nmGateSubmitAuth()">Seeni</button>
+    <div id="nm-gate-status" class="muted" style="margin-top:10px;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- 2. MODAL FAYYADAMTOOTA HUNDAA, FOLLOW & ADD FRIEND -->
+<div id="nm-people-dir-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmClosePeopleDir()">
+  <div class="modal-card" style="max-width:560px;">
+    <div class="modal-header">
+      <h3>👥 Fayyadamtoota, Follow & Add Friend</h3>
+      <button type="button" class="btn btn-outline btn-sm" onclick="nmClosePeopleDir()">✕ Cufi</button>
+    </div>
+    <div id="nm-people-dir-list">Fayyadamtoota fe'aa jira...</div>
+  </div>
+</div>
+
+<!-- 3. MODAL MAXXANSA OFII EDIT GOCHUU -->
+<div id="nm-edit-post-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmCloseEditPostModal()">
+  <div class="modal-card" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>✏️ Maxxansa Sirreessi (Edit Post)</h3>
+      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseEditPostModal()">✕ Cufi</button>
+    </div>
+    <input type="hidden" id="nm-edit-post-id" />
+    <div class="form-group" style="margin-bottom:12px;">
+      <label for="nm-edit-post-textarea">Qabiyyee Maxxansaa</label>
+      <textarea id="nm-edit-post-textarea" rows="5" style="width:100%;"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseEditPostModal()">Haqi</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="nmSaveEditedPost()">💾 Jijjiirama Ol-kaa'i</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let nmGateMode = "login";
+  let nmCurrentUser = null;
+  let nmEditingCardEl = null;
+
+  function nmGetSb() {
+    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
+    if (window.sb && window.sb.auth) return window.sb;
+    if (window._supabase && window._supabase.auth) return window._supabase;
+
+    const url = "https://uvwkkeqicejfuqczclbt.supabase.co";
+    const keyInput = document.querySelector('input[id*="anon" i], input[placeholder*="key" i]');
+    const storedKey = localStorage.getItem("supabase_anon_key") || localStorage.getItem("nm_sb_key") || "";
+    const key = (keyInput && keyInput.value ? keyInput.value.trim() : "") || storedKey;
+
+    if (window.supabase && typeof window.supabase.createClient === "function" && key) {
+      window.nmAutoSb = window.nmAutoSb || window.supabase.createClient(url, key);
+      return window.nmAutoSb;
+    }
+    return null;
+  }
+
+  function nmEsc(v) {
+    return String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  window.nmGateSetMode = function (mode) {
+    nmGateMode = mode === "signup" ? "signup" : "login";
+    document.getElementById("nm-gate-tab-login").className =
+      nmGateMode === "login" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
+    document.getElementById("nm-gate-tab-signup").className =
+      nmGateMode === "signup" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
+    document.getElementById("nm-gate-name-wrap").classList.toggle("hidden", nmGateMode !== "signup");
+    document.getElementById("nm-gate-submit-btn").textContent =
+      nmGateMode === "signup" ? "Account Uumi" : "Seeni";
+    document.getElementById("nm-gate-status").textContent = "";
+  };
+
+  async function nmCheckGateSession() {
+    const gate = document.getElementById("nm-auth-gate-screen");
+    const sb = nmGetSb();
+    if (!sb || !sb.auth) return;
+
+    try {
+      const { data } = await sb.auth.getSession();
+      const user = data && data.session ? data.session.user : null;
+      nmCurrentUser = user;
+
+      if (user) {
+        if (gate) gate.classList.add("hidden");
+        document.body.style.overflow = "";
+        nmDecorateUserPosts();
+      } else {
+        if (gate) gate.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      }
+    } catch (e) {}
+  }
+
+  window.nmGateSubmitAuth = async function () {
+    const sb = nmGetSb();
+    const statusEl = document.getElementById("nm-gate-status");
+    const email = (document.getElementById("nm-gate-email").value || "").trim();
+    const password = document.getElementById("nm-gate-password").value || "";
+    const fullName = (document.getElementById("nm-gate-fullname").value || "").trim();
+
+    if (!sb || !sb.auth) {
+      statusEl.textContent = "Supabase hin argamne. Qindaa'ina Supabase mirkaneessi.";
+      return;
+    }
+    if (!email || !password) {
+      statusEl.textContent = "Email fi Password guuti.";
+      return;
+    }
+
+    statusEl.textContent = nmGateMode === "signup" ? "Account uumaa jira..." : "Seenaa jira...";
+
+    try {
+      if (nmGateMode === "signup") {
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName || email.split("@")[0] } }
+        });
+        if (error) {
+          statusEl.textContent = "Dogoggora: " + error.message;
+          return;
+        }
+        if (data && data.user) {
+          await sb.from("profiles").upsert({
+            id: data.user.id,
+            email: email,
+            full_name: fullName || email.split("@")[0]
+          }).catch(() => {});
+        }
+        if (data && data.session) {
+          await nmCheckGateSession();
+        } else {
+          statusEl.textContent = "Account uumameera! Amma 'Seeni (Login)' tuqii seeni.";
+          nmGateSetMode("login");
+        }
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) {
+          statusEl.textContent = "Seenuu dide: " + error.message;
+          return;
+        }
+        await nmCheckGateSession();
+      }
+    } catch (err) {
+      statusEl.textContent = "Rakkoon uumame: " + (err.message || err);
+    }
+  };
+
+  /* ==========================================================
+     FAYYADAMTOOTA HUNDAA, FOLLOW & ADD FRIEND
+     ========================================================== */
+  window.nmOpenPeopleDir = async function () {
+    const modal = document.getElementById("nm-people-dir-modal");
+    const listEl = document.getElementById("nm-people-dir-list");
+    if (modal) modal.classList.remove("hidden");
+    listEl.innerHTML = "Fayyadamtoota fe'aa jira...";
+
+    const sb = nmGetSb();
+    if (!sb) {
+      listEl.innerHTML = "Supabase hin argamne.";
+      return;
+    }
+
+    const { data: users, error } = await sb.from("profiles").select("*").limit(100);
+    if (error || !users || !users.length) {
+      listEl.innerHTML = "Fayyadamtoonni galmaa'an hin argamne ykn table 'profiles' hin jiru.";
+      return;
+    }
+
+    const myId = nmCurrentUser ? nmCurrentUser.id : "";
+    const follows = JSON.parse(localStorage.getItem("nm_local_follows") || "{}");
+    const friends = JSON.parse(localStorage.getItem("nm_local_friends") || "{}");
+
+    listEl.innerHTML = users
+      .filter((u) => u.id !== myId)
+      .map((u) => {
+        const name = u.full_name || u.username || u.email || "User";
+        const isFol = !!follows[u.id];
+        const isFr = !!friends[u.id];
+        return (
+          '<div class="nm-user-row">' +
+          '<div><strong>' + nmEsc(name) + '</strong><div class="muted" style="font-size:12px;">' + nmEsc(u.email || "") + "</div></div>" +
+          '<div style="display:flex;gap:6px;">' +
+          '<button type="button" class="btn btn-sm ' + (isFol ? "btn-primary" : "btn-outline") + '" onclick="nmToggleFollowUser(\'' + nmEsc(u.id) + '\', this)">' +
+          (isFol ? "✓ Following" : "+ Follow") + "</button>" +
+          '<button type="button" class="btn btn-sm ' + (isFr ? "btn-primary" : "btn-outline") + '" onclick="nmToggleFriendUser(\'' + nmEsc(u.id) + '\', this)">' +
+          (isFr ? "🤝 Friend" : "+ Add Friend") + "</button>" +
+          "</div></div>"
+        );
+      })
+      .join("") || "Fayyadamtoonni biroo hin jiran.";
+  };
+
+  window.nmClosePeopleDir = function () {
+    const modal = document.getElementById("nm-people-dir-modal");
+    if (modal) modal.classList.add("hidden");
+  };
+
+  window.nmToggleFollowUser = async function (targetId, btn) {
+    const sb = nmGetSb();
+    const myId = nmCurrentUser ? nmCurrentUser.id : "";
+    const follows = JSON.parse(localStorage.getItem("nm_local_follows") || "{}");
+    const nextState = !follows[targetId];
+    follows[targetId] = nextState;
+    localStorage.setItem("nm_local_follows", JSON.stringify(follows));
+
+    if (btn) {
+      btn.textContent = nextState ? "✓ Following" : "+ Follow";
+      btn.className = nextState ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline";
+    }
+    if (sb && myId) {
+      if (nextState) {
+        await sb.from("follows").upsert({ follower_id: myId, following_id: targetId }).catch(() => {});
+      } else {
+        await sb.from("follows").delete().match({ follower_id: myId, following_id: targetId }).catch(() => {});
+      }
+    }
+  };
+
+  window.nmToggleFriendUser = async function (targetId, btn) {
+    const sb = nmGetSb();
+    const myId = nmCurrentUser ? nmCurrentUser.id : "";
+    const friends = JSON.parse(localStorage.getItem("nm_local_friends") || "{}");
+    const nextState = !friends[targetId];
+    friends[targetId] = nextState;
+    localStorage.setItem("nm_local_friends", JSON.stringify(friends));
+
+    if (btn) {
+      btn.textContent = nextState ? "🤝 Friend" : "+ Add Friend";
+      btn.className = nextState ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline";
+    }
+    if (sb && myId) {
+      if (nextState) {
+        await sb.from("friend_requests").upsert({ sender_id: myId, receiver_id: targetId, status: "accepted" }).catch(() => {});
+      } else {
+        await sb.from("friend_requests").delete().match({ sender_id: myId, receiver_id: targetId }).catch(() => {});
+      }
+    }
+  };
+
+  /* ==========================================================
+     MAXXANSA OFII EDIT & DELETE GOCHUU
+     ========================================================== */
+  function nmDecorateUserPosts() {
+    if (!nmCurrentUser) return;
+    const myId = nmCurrentUser.id;
+    const myEmail = (nmCurrentUser.email || "").toLowerCase();
+
+    document.querySelectorAll("[data-post-id], .post-card, .feed-item, article").forEach((card) => {
+      if (card.dataset.nmPostActionsAdded === "1") return;
+      const postId = card.dataset.postId || card.getAttribute("data-id") || "";
+      const authorId = card.dataset.userId || card.getAttribute("data-author-id") || "";
+      const cardText = (card.textContent || "").toLowerCase();
+
+      const isMine =
+        (authorId && authorId === myId) ||
+        (myEmail && cardText.includes(myEmail));
+
+      if (!isMine && !postId) return;
+      if (authorId && authorId !== myId) return;
+
+      card.dataset.nmPostActionsAdded = "1";
+      const bar = document.createElement("div");
+      bar.className = "nm-post-owner-actions";
+      bar.innerHTML =
+        '<button type="button" class="btn btn-outline btn-sm" data-nm-edit="1">✏️ Edit (Sirreessi)</button>' +
+        '<button type="button" class="btn btn-outline btn-sm" data-nm-del="1">🗑️ Delete (Haqi)</button>';
+
+      bar.querySelector("[data-nm-edit]").onclick = function () {
+        nmOpenEditPostModal(postId, card);
+      };
+      bar.querySelector("[data-nm-del]").onclick = function () {
+        nmDeleteUserPost(postId, card);
+      };
+
+      card.appendChild(bar);
+    });
+  }
+
+  window.nmOpenEditPostModal = function (postId, cardEl) {
+    nmEditingCardEl = cardEl;
+    document.getElementById("nm-edit-post-id").value = postId || "";
+    const bodyEl = cardEl.querySelector(".post-body, .post-content, p") || cardEl;
+    document.getElementById("nm-edit-post-textarea").value = (bodyEl.textContent || "").trim();
+    document.getElementById("nm-edit-post-modal").classList.remove("hidden");
+  };
+
+  window.nmCloseEditPostModal = function () {
+    document.getElementById("nm-edit-post-modal").classList.add("hidden");
+    nmEditingCardEl = null;
+  };
+
+  window.nmSaveEditedPost = async function () {
+    const postId = document.getElementById("nm-edit-post-id").value;
+    const newText = document.getElementById("nm-edit-post-textarea").value.trim();
+    if (!newText) return;
+
+    const sb = nmGetSb();
+    if (sb && postId && nmCurrentUser) {
+      await sb
+        .from("posts")
+        .update({ content: newText, body: newText })
+        .eq("id", postId)
+        .eq("user_id", nmCurrentUser.id)
+        .catch(() => {});
+    }
+
+    if (nmEditingCardEl) {
+      const bodyEl = nmEditingCardEl.querySelector(".post-body, .post-content, p");
+      if (bodyEl) bodyEl.textContent = newText;
+    }
+    nmCloseEditPostModal();
+    if (typeof showToast === "function") showToast("Maxxansi kee sirreeffameera!");
+  };
+
+  window.nmDeleteUserPost = async function (postId, cardEl) {
+    if (!confirm("Maxxansa kana dhuguma haquu barbaaddaa?")) return;
+    const sb = nmGetSb();
+    if (sb && postId && nmCurrentUser) {
+      await sb
+        .from("posts")
+        .delete()
+        .eq("id", postId)
+        .eq("user_id", nmCurrentUser.id)
+        .catch(() => {});
+    }
+    if (cardEl) cardEl.remove();
+    if (typeof showToast === "function") showToast("Maxxansi haqameera!");
+  };
+
+  function nmInjectDirButton() {
+    if (document.getElementById("nm-dir-topbar-btn")) return;
+    const topbar = document.querySelector(".topbar");
+    if (!topbar) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "nm-dir-topbar-btn";
+    btn.className = "btn btn-sm btn-outline";
+    btn.textContent = "👥 People / Friends";
+    btn.onclick = nmOpenPeopleDir;
+    topbar.appendChild(btn);
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    nmInjectDirButton();
+    nmCheckGateSession();
+    setInterval(nmDecorateUserPosts, 1500);
+
+    const sb = nmGetSb();
+    if (sb && sb.auth && typeof sb.auth.onAuthStateChange === "function") {
+      sb.auth.onAuthStateChange(function () {
+        nmCheckGateSession();
+      });
+    }
+  });
+})();
 </script>
 </body>
           </html>
