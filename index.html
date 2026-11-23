@@ -1468,6 +1468,59 @@
   window.addEventListener("DOMContentLoaded", nmEnsureAuthButton);
   setTimeout(nmRefreshAuthUi, 500);
 })();
+</script><!-- ==========================================================
+     NESRU MICHAEL ABOUT APPEND HELPER (APPEND BEFORE </body>)
+     Appends bio text to About section/modal without deleting old text
+     ========================================================== -->
+<script>
+(function () {
+  const NM_ABOUT_EXTRA =
+    "Nesru michael Barataa waggaa sadaffaa Sagantaa Barnoota Educational planning and managemant Oda Bultum University";
+
+  function nmAppendToAbout() {
+    const candidates = Array.from(
+      document.querySelectorAll("div, section, article, p, .card, .modal-card, .box")
+    );
+
+    candidates.forEach((el) => {
+      if (el.dataset && el.dataset.nmAboutAppended === "1") return;
+      if (el.children && el.children.length > 10) return;
+
+      const text = (el.textContent || "").trim();
+      if (!text) return;
+
+      const isAboutBlock =
+        /^\s*about\s*$/i.test(text) ||
+        /\babout\b/i.test(text) ||
+        (el.id && /about/i.test(el.id)) ||
+        (el.className && typeof el.className === "string" && /about/i.test(el.className));
+
+      if (!isAboutBlock) return;
+      if (text.includes(NM_ABOUT_EXTRA)) {
+        if (el.dataset) el.dataset.nmAboutAppended = "1";
+        return;
+      }
+
+      const target =
+        el.querySelector("p, .about-text, .about-body, .description, .muted") || el;
+
+      if (target && !target.textContent.includes(NM_ABOUT_EXTRA)) {
+        const note = document.createElement("div");
+        note.className = "nm-about-bio-extra";
+        note.style.marginTop = "8px";
+        note.textContent = NM_ABOUT_EXTRA;
+        target.appendChild(note);
+        if (el.dataset) el.dataset.nmAboutAppended = "1";
+      }
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", nmAppendToAbout);
+  document.addEventListener("click", function () {
+    setTimeout(nmAppendToAbout, 120);
+  });
+  setTimeout(nmAppendToAbout, 400);
+})();
 </script>
 </body>
           </html>
