@@ -1260,6 +1260,214 @@
   setTimeout(nmHideSupabaseBlocks, 300);
   setTimeout(nmHideSupabaseBlocks, 1200);
 })();
+</script><!-- ==========================================================
+     NESRU MICHAEL AUTH (SIGN UP, SIGN IN & LOGOUT) HELPER
+     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
+     ========================================================== -->
+<div id="nm-auth-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmCloseAuthModal()">
+  <div class="modal-card" style="max-width:460px;">
+    <div class="modal-header">
+      <h3 id="nm-auth-modal-title">🔐 Account</h3>
+      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseAuthModal()">✕ Cufi</button>
+    </div>
+
+    <div id="nm-auth-logged-in-box" class="hidden" style="margin-bottom:14px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;">
+      <div><strong>Seentaniirtu:</strong> <span id="nm-auth-user-email"></span></div>
+      <div class="muted" id="nm-auth-user-id" style="margin-top:4px;word-break:break-all;"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="nmLogoutUser()">🚪 Logout (Ba'i)</button>
+      </div>
+    </div>
+
+    <div id="nm-auth-forms-box">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button type="button" id="nm-tab-login" class="btn btn-primary btn-sm" onclick="nmSwitchAuthTab('login')">Seeni (Login)</button>
+        <button type="button" id="nm-tab-signup" class="btn btn-outline btn-sm" onclick="nmSwitchAuthTab('signup')">Account Uumi (Sign Up)</button>
+      </div>
+
+      <div class="form-group" style="margin-bottom:10px;">
+        <label for="nm-auth-email">Email</label>
+        <input type="email" id="nm-auth-email" placeholder="example@gmail.com" style="width:100%;" />
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="nm-auth-password">Password (yoo xiqqaate 6)</label>
+        <input type="password" id="nm-auth-password" placeholder="********" style="width:100%;" />
+      </div>
+
+      <button type="button" id="nm-auth-submit-btn" class="btn btn-primary btn-sm" onclick="nmSubmitAuthForm()">Seeni</button>
+    </div>
+
+    <div id="nm-auth-status" class="muted" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let nmAuthMode = "login";
+
+  function nmSetAuthStatus(msg) {
+    const el = document.getElementById("nm-auth-status");
+    if (el) el.textContent = msg;
+  }
+
+  function nmFindSupabaseClient() {
+    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
+    if (window.sb && window.sb.auth) return window.sb;
+    if (window._supabase && window._supabase.auth) return window._supabase;
+
+    const urlInput = document.querySelector('input[value*="supabase.co"], input[placeholder*="supabase" i]');
+    const keyInput = document.querySelector('input[type="password"][id*="key" i], input[id*="anon" i], input[placeholder*="key" i]');
+    const url = (urlInput && urlInput.value ? urlInput.value.trim() : "") || "https://uvwkkeqicejfuqczclbt.supabase.co";
+    const key = (keyInput && keyInput.value ? keyInput.value.trim() : "") || "";
+
+    if (window.supabase && typeof window.supabase.createClient === "function" && url && key) {
+      window.nmFallbackSb = window.nmFallbackSb || window.supabase.createClient(url, key);
+      return window.nmFallbackSb;
+    }
+    return null;
+  }
+
+  async function nmRefreshAuthUi() {
+    const client = nmFindSupabaseClient();
+    const loggedInBox = document.getElementById("nm-auth-logged-in-box");
+    const formsBox = document.getElementById("nm-auth-forms-box");
+    const emailSpan = document.getElementById("nm-auth-user-email");
+    const idSpan = document.getElementById("nm-auth-user-id");
+    const btn = document.getElementById("nm-open-auth-btn");
+
+    let user = null;
+    if (client && client.auth && typeof client.auth.getUser === "function") {
+      try {
+        const { data } = await client.auth.getUser();
+        user = data && data.user ? data.user : null;
+      } catch (e) {}
+    }
+
+    if (user) {
+      if (loggedInBox) loggedInBox.classList.remove("hidden");
+      if (formsBox) formsBox.classList.add("hidden");
+      if (emailSpan) emailSpan.textContent = user.email || "User";
+      if (idSpan) idSpan.textContent = "ID: " + (user.id || "");
+      if (btn) btn.textContent = "🚪 Account / Logout";
+    } else {
+      if (loggedInBox) loggedInBox.classList.add("hidden");
+      if (formsBox) formsBox.classList.remove("hidden");
+      if (btn) btn.textContent = "🔐 Login / Sign Up";
+    }
+  }
+
+  window.nmOpenAuthModal = function () {
+    const m = document.getElementById("nm-auth-modal");
+    if (m) m.classList.remove("hidden");
+    nmSetAuthStatus("");
+    nmRefreshAuthUi();
+  };
+
+  window.nmCloseAuthModal = function () {
+    const m = document.getElementById("nm-auth-modal");
+    if (m) m.classList.add("hidden");
+  };
+
+  window.nmSwitchAuthTab = function (mode) {
+    nmAuthMode = mode === "signup" ? "signup" : "login";
+    const loginTab = document.getElementById("nm-tab-login");
+    const signupTab = document.getElementById("nm-tab-signup");
+    const submitBtn = document.getElementById("nm-auth-submit-btn");
+
+    if (loginTab) loginTab.className = nmAuthMode === "login" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
+    if (signupTab) signupTab.className = nmAuthMode === "signup" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
+    if (submitBtn) submitBtn.textContent = nmAuthMode === "signup" ? "Account Uumi" : "Seeni";
+    nmSetAuthStatus("");
+  };
+
+  window.nmSubmitAuthForm = async function () {
+    const client = nmFindSupabaseClient();
+    const emailEl = document.getElementById("nm-auth-email");
+    const passEl = document.getElementById("nm-auth-password");
+    const email = emailEl ? emailEl.value.trim() : "";
+    const password = passEl ? passEl.value : "";
+
+    if (!client || !client.auth) {
+      nmSetAuthStatus("Supabase client hin argamne. Qindaa'ina Supabase mirkaneessi.");
+      return;
+    }
+    if (!email || !password) {
+      nmSetAuthStatus("Maaloo Email fi Password guuti.");
+      return;
+    }
+
+    nmSetAuthStatus(nmAuthMode === "signup" ? "Account uumaa jira..." : "Seenaa jira...");
+
+    try {
+      if (nmAuthMode === "signup") {
+        const { data, error } = await client.auth.signUp({ email, password });
+        if (error) {
+          nmSetAuthStatus("Dogoggora: " + error.message);
+          return;
+        }
+        if (data && data.session) {
+          nmSetAuthStatus("Account uumameera, seentaniirtu!");
+          await nmRefreshAuthUi();
+          setTimeout(nmCloseAuthModal, 700);
+        } else {
+          nmSetAuthStatus("Account uumameera! Email kee mirkaneessiitii 'Seeni (Login)' tuqi.");
+        }
+      } else {
+        const { error } = await client.auth.signInWithPassword({ email, password });
+        if (error) {
+          nmSetAuthStatus("Seenuu dide: " + error.message);
+          return;
+        }
+        nmSetAuthStatus("Milkaa'inaan seentaniirtu!");
+        await nmRefreshAuthUi();
+        setTimeout(nmCloseAuthModal, 700);
+      }
+    } catch (err) {
+      nmSetAuthStatus("Rakkoon uumame: " + (err && err.message ? err.message : err));
+    }
+  };
+
+  window.nmLogoutUser = async function () {
+    const client = nmFindSupabaseClient();
+    nmSetAuthStatus("Ba'aa jira (Logging out)...");
+    try {
+      if (client && client.auth && typeof client.auth.signOut === "function") {
+        await client.auth.signOut();
+      }
+      localStorage.removeItem("sb-uvwkkeqicejfuqczclbt-auth-token");
+      nmSetAuthStatus("Logout ta'eera. Deebi'ee seenuuf Email fi Password galchi.");
+      await nmRefreshAuthUi();
+    } catch (e) {
+      nmSetAuthStatus("Logout irratti rakkoon uumame.");
+    }
+  };
+
+  function nmEnsureAuthButton() {
+    if (document.getElementById("nm-open-auth-btn")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "nm-open-auth-btn";
+    btn.className = "btn btn-sm btn-primary";
+    btn.textContent = "🔐 Login / Sign Up";
+    btn.onclick = nmOpenAuthModal;
+
+    const topbar = document.querySelector(".topbar");
+    if (topbar) {
+      topbar.appendChild(btn);
+    } else {
+      btn.style.position = "fixed";
+      btn.style.bottom = "76px";
+      btn.style.right = "16px";
+      btn.style.zIndex = "999";
+      document.body.appendChild(btn);
+    }
+    nmRefreshAuthUi();
+  }
+
+  window.addEventListener("DOMContentLoaded", nmEnsureAuthButton);
+  setTimeout(nmRefreshAuthUi, 500);
+})();
 </script>
 </body>
           </html>
