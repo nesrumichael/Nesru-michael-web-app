@@ -1,4 +1,4 @@
-8<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="om">
 <head>
   <meta charset="UTF-8" />
@@ -31,6 +31,29 @@
 
     .hidden { display: none !important; }
 
+    /* AUTH GATE SCREEN (BEFORE LOGIN) */
+    #nm-auth-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    #nm-auth-gate.hidden { display: none !important; }
+    .nm-auth-box {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      color: #0f172a;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    }
+
     .topbar {
       position: sticky;
       top: 0;
@@ -41,7 +64,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
     }
     .brand-wrap { display: flex; align-items: center; gap: 8px; }
@@ -58,7 +82,7 @@
       font-size: 14px;
     }
     .brand { font-weight: 800; font-size: 16px; letter-spacing: 0.2px; }
-    .top-actions { display: flex; align-items: center; gap: 6px; }
+    .top-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .badge {
       font-size: 11px;
       padding: 4px 9px;
@@ -140,13 +164,6 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      overflow: visible;
-    }
-    .avatar-sm img, .avatar-lg img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
     }
     .avatar-lg {
       width: 60px;
@@ -161,17 +178,7 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .presence-pin {
-      position: absolute;
-      right: -1px;
-      bottom: -1px;
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      border: 2px solid #fff;
-    }
     .dot-online { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
-    .dot-offline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
     .status-sub { font-size: 12px; color: #64748b; }
 
     .post-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
@@ -240,7 +247,7 @@
       font-size: 14px;
     }
     .msg-bubble.mine { background: #2563eb; color: #fff; align-self: flex-end; }
-    .msg-meta { font-size: 11px; opacity: 0.8; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+    .msg-meta { font-size: 11px; opacity: 0.8; margin-bottom: 3px; }
     .chat-form { display: flex; gap: 8px; }
 
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; text-align: center; }
@@ -255,7 +262,6 @@
     }
     .menu-grid .btn { justify-content: flex-start; }
 
-    /* SITE FOOTER WITH COPYRIGHT & SOCIAL LINKS */
     .site-footer {
       max-width: 720px;
       margin: 16px auto 10px;
@@ -391,6 +397,39 @@
   </style>
 </head>
 <body>
+  <!-- LOGIN / SIGN UP GATE (SHOWN UNTIL LOGGED IN) -->
+  <div id="nm-auth-gate">
+    <div class="nm-auth-box">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div class="brand-logo" style="margin:0 auto 8px;width:44px;height:44px;font-size:18px;">NM</div>
+        <h2>Nesru Michael</h2>
+        <p class="muted">Itti fufuuf jalqaba Seeni (Login) ykn Account Uumi (Sign Up).</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button type="button" id="gate-tab-login" class="btn btn-outline active" onclick="setGateMode('login')">Seeni (Login)</button>
+        <button type="button" id="gate-tab-signup" class="btn btn-outline" onclick="setGateMode('signup')">Sign Up</button>
+      </div>
+
+      <form id="gate-auth-form" onsubmit="submitGateAuth(event)">
+        <div id="gate-name-group" class="form-group hidden">
+          <label for="gate-name">Maqaa Guutuu</label>
+          <input type="text" id="gate-name" placeholder="Maqaa kee barreessi" />
+        </div>
+        <div class="form-group">
+          <label for="gate-email">Email</label>
+          <input type="email" id="gate-email" placeholder="example@gmail.com" required />
+        </div>
+        <div class="form-group">
+          <label for="gate-password">Password (yoo xiqqaate 6)</label>
+          <input type="password" id="gate-password" placeholder="********" minlength="6" required />
+        </div>
+        <button type="submit" id="gate-submit-btn" class="btn btn-primary" style="width:100%;justify-content:center;">Seeni</button>
+      </form>
+      <div id="gate-msg" class="muted" style="margin-top:10px;text-align:center;"></div>
+    </div>
+  </div>
+
   <header class="topbar">
     <div class="brand-wrap">
       <div class="brand-logo">NM</div>
@@ -398,6 +437,7 @@
     </div>
     <div class="top-actions">
       <button type="button" class="btn btn-sm btn-outline" onclick="openInfoModal('settings')" title="Settings">⚙️</button>
+      <button type="button" class="btn btn-sm btn-outline" onclick="handleLogout()">🚪 Logout</button>
       <span id="cloud-badge" class="badge badge-local">Local Mode</span>
     </div>
   </header>
@@ -460,7 +500,7 @@
 
         <div>
           <strong id="chat-room-title">Chat Waliinii (Public Group)</strong>
-          <div id="chat-room-status" class="status-sub"><span class="dot-online"></span> 1 Online amma</div>
+          <div id="chat-room-status" class="status-sub"><span class="dot-online"></span> Online amma</div>
         </div>
 
         <div id="chat-messages" class="chat-messages"></div>
@@ -504,7 +544,6 @@
           <button type="button" class="btn btn-outline btn-sm" onclick="handleLogout()">🚪 Ba'i (Logout)</button>
         </div>
 
-        <!-- EDIT PROFILE & BIO FORM -->
         <form id="edit-profile-form" class="hidden" style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:12px;" onsubmit="handleSaveProfileDetails(event)">
           <div class="form-group">
             <label for="edit-prof-name">Maqaa Guutuu</label>
@@ -522,31 +561,6 @@
         </form>
       </div>
 
-      <!-- LOGIN / REGISTER CARD -->
-      <div class="card">
-        <div class="auth-tabs">
-          <button type="button" id="btn-show-login" class="btn btn-outline active" onclick="switchAuthMode('login')">Seeni (Login)</button>
-          <button type="button" id="btn-show-register" class="btn btn-outline" onclick="switchAuthMode('register')">Akkaawuntii Uumi</button>
-        </div>
-
-        <form onsubmit="handleAuthSubmit(event)">
-          <div id="field-name" class="form-group hidden">
-            <label for="auth-name">Maqaa Guutuu</label>
-            <input type="text" id="auth-name" placeholder="Maqaa keessan galchaa" />
-          </div>
-          <div class="form-group">
-            <label for="auth-email">Email</label>
-            <input type="email" id="auth-email" placeholder="example@gmail.com" required />
-          </div>
-          <div class="form-group">
-            <label for="auth-password">Password</label>
-            <input type="password" id="auth-password" placeholder="Password galchaa" required />
-          </div>
-          <button type="submit" id="auth-submit-btn" class="btn btn-primary" style="width:100%;justify-content:center;">Seeni</button>
-        </form>
-      </div>
-
-      <!-- MENU: SETTINGS, ABOUT, PRIVACY, TERMS, TRANSPARENCY, CONTACT, SUPPORT -->
       <div class="card">
         <h4 style="margin-bottom:4px;">Menu Odeeffannoo, Seera & Deeggarsaa</h4>
         <p class="muted">Fuulaalee seeraa, iftoominaa fi deeggarsa Nesru Michael ilaaluuf cuqaasaa:</p>
@@ -560,23 +574,8 @@
           <button type="button" class="btn btn-outline btn-sm" onclick="openInfoModal('support')">🎧 Support</button>
         </div>
       </div>
-
-      <!-- SUPABASE CONFIG -->
-      <div class="card">
-        <h4 style="margin-bottom:8px;">Qindaa'ina Supabase Cloud</h4>
-        <div class="form-group">
-          <label for="sb-url">Supabase Project URL</label>
-          <input type="url" id="sb-url" placeholder="https://xxxx.supabase.co" />
-        </div>
-        <div class="form-group">
-          <label for="sb-key">Supabase Anon Key</label>
-          <input type="text" id="sb-key" placeholder="eyJ..." />
-        </div>
-        <button type="button" class="btn btn-success btn-sm" onclick="saveSupabaseConfig()">Qindaa'ina Ol-kaa'i</button>
-      </div>
     </section>
 
-    <!-- FOOTER: LEGAL LINKS, SOCIAL MEDIA BUTTONS & NESRU MICHAEL COPYRIGHT -->
     <footer class="site-footer">
       <div class="footer-links">
         <button type="button" onclick="openInfoModal('about')">About</button>
@@ -604,18 +603,29 @@
     </footer>
   </main>
 
-  <!-- PUBLIC PROFILE MODAL -->
-  <div id="public-profile-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closePublicProfile()">
+  <!-- EDIT POST MODAL -->
+  <div id="edit-post-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeEditPostModal()">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 id="pub-prof-name">Profile</h3>
-        <button type="button" class="btn btn-outline btn-sm" onclick="closePublicProfile()">✕ Cufi</button>
+        <h3>✏️ Maxxansa Sirreessi</h3>
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeEditPostModal()">✕ Cufi</button>
       </div>
-      <div id="pub-prof-content"></div>
+      <form onsubmit="savePostEdit(event)">
+        <input type="hidden" id="edit-post-id" />
+        <div class="form-group">
+          <label for="edit-post-title">Mata-duree</label>
+          <input type="text" id="edit-post-title" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-post-body">Qabiyyee</label>
+          <textarea id="edit-post-body" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">💾 Ol-kaa'i</button>
+      </form>
     </div>
   </div>
 
-  <!-- INFO, LEGAL, SETTINGS & SUPPORT MODAL -->
+  <!-- INFO MODAL -->
   <div id="info-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeInfoModal()">
     <div class="modal-card">
       <div class="modal-header">
@@ -635,1990 +645,349 @@
     <button type="button" class="nav-item" data-target="view-auth" onclick="navigateTo('view-auth')">👤 Profile</button>
   </nav>
 
-  <script src="./app.js"></script> <!-- ==========================================================
-     NESRU MICHAEL APPEND-ONLY ENHANCEMENTS (BEFORE </body>)
-     ========================================================== -->
-<div id="nm-append-notif-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmCloseNotifModal()">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3>🔔 Beeksisa (Notifications)</h3>
-      <div style="display:flex;gap:6px;">
-        <button type="button" class="btn btn-outline btn-sm" onclick="nmMarkAllRead()">✓ Dubbise</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseNotifModal()">✕ Cufi</button>
-      </div>
-    </div>
-    <div id="nm-append-notif-list" style="font-size:14px;"></div>
-  </div>
-</div>
+  <script>
+    (function () {
+      const SUPABASE_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
+      // Bakka gadii irratti Supabase Anon Key kee guutuu (eyJ...) galchi:
+      const SUPABASE_ANON_KEY = "PASTE_YOUR_REAL_SUPABASE_ANON_KEY_HERE";
 
-<script>
-(function () {
-  const NOTIF_KEY = "nesru_notifications_v2";
-  let nmNotifs = JSON.parse(localStorage.getItem(NOTIF_KEY) || "[]");
-  let nmSelectedFile = null;
+      let sb = null;
+      let currentUser = null;
+      let gateMode = "login";
+      let feedFilter = "all";
 
-  function nmEsc(str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  function nmGetCurrentUser() {
-    try {
-      if (typeof currentUser !== "undefined" && currentUser) return currentUser;
-    } catch (e) {}
-    try {
-      return JSON.parse(localStorage.getItem("nesru_current_user") || "null");
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // 1. Card Sign in / Register erga seenee booda Profile irratti akka dhokatu
-  function nmSyncAuthBox() {
-    const user = nmGetCurrentUser();
-    let authCard = document.getElementById("auth-box-card");
-
-    if (!authCard) {
-      const authView = document.getElementById("view-auth");
-      if (authView) {
-        const forms = authView.querySelectorAll("form");
-        for (const f of forms) {
-          if (f.querySelector("#auth-email") && f.querySelector("#auth-password")) {
-            authCard = f.closest(".card");
-            if (authCard) authCard.id = "auth-box-card";
-            break;
+      function initSupabase() {
+        const key = (SUPABASE_ANON_KEY || "").trim();
+        if (window.supabase && typeof window.supabase.createClient === "function" && key && !key.startsWith("PASTE_")) {
+          sb = window.supabase.createClient(SUPABASE_URL, key);
+          window.supabaseClient = sb;
+          window.sb = sb;
+          const badge = document.getElementById("cloud-badge");
+          if (badge) {
+            badge.textContent = "Cloud Connected";
+            badge.className = "badge badge-cloud";
           }
         }
       }
-    }
 
-    if (authCard) {
-      authCard.classList.toggle("hidden", Boolean(user));
-    }
-
-    const tag = document.getElementById("feed-user-tag");
-    if (tag && user && user.name) {
-      tag.textContent = user.name;
-    }
-  }
-
-  // 2. Topbar irratti mallattoo Notification (🔔) dabaluu
-  function nmEnsureBellButton() {
-    const topbar = document.querySelector(".topbar");
-    if (!topbar || document.getElementById("nm-bell-btn")) return;
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "nm-bell-btn";
-    btn.className = "btn btn-sm btn-outline";
-    btn.style.position = "relative";
-    btn.innerHTML = '🔔 <span id="nm-bell-badge" class="nav-badge hidden">0</span>';
-    btn.onclick = nmOpenNotifModal;
-    topbar.appendChild(btn);
-    nmUpdateBellBadge();
-  }
-
-  function nmUpdateBellBadge() {
-    const badge = document.getElementById("nm-bell-badge");
-    if (!badge) return;
-    const count = nmNotifs.filter((n) => !n.read).length;
-    badge.textContent = String(count);
-    badge.classList.toggle("hidden", count === 0);
-  }
-
-  function nmPushNotif(title, body, viewId) {
-    nmNotifs.unshift({
-      id: String(Date.now()) + Math.random().toString(36).slice(2, 6),
-      title: title,
-      body: body,
-      viewId: viewId || "view-feed",
-      read: false,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    });
-    if (nmNotifs.length > 40) nmNotifs.pop();
-    localStorage.setItem(NOTIF_KEY, JSON.stringify(nmNotifs));
-    nmUpdateBellBadge();
-
-    if (typeof showToast === "function") {
-      showToast("🔔 " + title + ": " + body);
-    }
-    if ("Notification" in window && Notification.permission === "granted") {
-      try {
-        new Notification(title, { body: body });
-      } catch (e) {}
-    }
-  }
-
-  window.nmOpenNotifModal = function () {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(function () {});
-    }
-    const modal = document.getElementById("nm-append-notif-modal");
-    const list = document.getElementById("nm-append-notif-list");
-    if (!modal || !list) return;
-
-    if (!nmNotifs.length) {
-      list.innerHTML = '<p class="muted">Beeksisni haaraan ammaaf hin jiru.</p>';
-    } else {
-      list.innerHTML = nmNotifs
-        .map(
-          (n) =>
-            '<div style="padding:10px;border-bottom:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;cursor:pointer;background:' +
-            (n.read ? "transparent" : "#eff6ff") +
-            '" onclick="nmHandleNotifItem(\'' +
-            nmEsc(n.id) +
-            "','" +
-            nmEsc(n.viewId) +
-            "')\">" +
-            '<div style="display:flex;justify-content:space-between;gap:8px;"><strong>' +
-            nmEsc(n.title) +
-            '</strong><span class="muted">' +
-            nmEsc(n.time) +
-            "</span></div>" +
-            '<div style="margin-top:4px;">' +
-            nmEsc(n.body) +
-            "</div></div>"
-        )
-        .join("");
-    }
-    modal.classList.remove("hidden");
-  };
-
-  window.nmHandleNotifItem = function (id, viewId) {
-    const found = nmNotifs.find((x) => x.id === id);
-    if (found) found.read = true;
-    localStorage.setItem(NOTIF_KEY, JSON.stringify(nmNotifs));
-    nmUpdateBellBadge();
-    nmCloseNotifModal();
-    if (typeof navigateTo === "function" && viewId) {
-      navigateTo(viewId);
-    }
-  };
-
-  window.nmMarkAllRead = function () {
-    nmNotifs.forEach((x) => {
-      x.read = true;
-    });
-    localStorage.setItem(NOTIF_KEY, JSON.stringify(nmNotifs));
-    nmUpdateBellBadge();
-    nmOpenNotifModal();
-  };
-
-  window.nmCloseNotifModal = function () {
-    const modal = document.getElementById("nm-append-notif-modal");
-    if (modal) modal.classList.add("hidden");
-  };
-
-  // 3. Feed keessatti File Image Upload + Namoota Biroo (Users) dabaluu
-  function nmEnsureFeedExtras() {
-    const postForm = document.getElementById("post-form");
-    const urlInput = document.getElementById("post-image");
-
-    if (postForm && urlInput && !document.getElementById("nm-post-file-input")) {
-      const wrap = document.createElement("div");
-      wrap.className = "form-group";
-      wrap.innerHTML =
-        '<label for="nm-post-file-input">📷 Suuraa Filadhu / Upload Godhi</label>' +
-        '<input type="file" id="nm-post-file-input" accept="image/*" />';
-      urlInput.parentElement.parentNode.insertBefore(wrap, urlInput.parentElement);
-
-      const fileInput = document.getElementById("nm-post-file-input");
-      fileInput.addEventListener("change", function () {
-        nmSelectedFile = (fileInput.files && fileInput.files[0]) || null;
-        if (!nmSelectedFile) return;
-        const reader = new FileReader();
-        reader.onload = function (ev) {
-          if (typeof ev.target.result === "string" && ev.target.result.length < 1800000) {
-            urlInput.value = ev.target.result;
-          }
-        };
-        reader.readAsDataURL(nmSelectedFile);
-      });
-
-      postForm.addEventListener("submit", function () {
-        nmSelectedFile = null;
-      });
-    }
-
-    const feedView = document.getElementById("view-feed");
-    const postsList = document.getElementById("posts-list");
-    if (feedView && postsList && !document.getElementById("nm-feed-users-card")) {
-      const card = document.createElement("div");
-      card.id = "nm-feed-users-card";
-      card.className = "card";
-      card.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
-        "<strong>👥 Namoota Biroo (Users)</strong>" +
-        '<button type="button" class="btn btn-outline btn-sm" onclick="if(typeof navigateTo===\'function\')navigateTo(\'view-people\')">Hundaa →</button>' +
-        '</div><div id="nm-feed-users-list"></div>';
-      feedView.insertBefore(card, postsList);
-    }
-
-    nmRenderFeedUsers();
-  }
-
-  function nmRenderFeedUsers() {
-    const listBox = document.getElementById("nm-feed-users-list");
-    if (!listBox) return;
-
-    const me = nmGetCurrentUser();
-    const map = new Map();
-
-    try {
-      if (typeof state !== "undefined" && Array.isArray(state.profiles)) {
-        state.profiles.forEach((p) => {
-          if (p && p.email) map.set(p.email, p.full_name || p.email);
-        });
-      }
-      if (typeof state !== "undefined" && Array.isArray(state.posts)) {
-        state.posts.forEach((p) => {
-          if (p && p.author_email && !map.has(p.author_email)) {
-            map.set(p.author_email, p.author || p.author_email);
-          }
-        });
-      }
-    } catch (e) {}
-
-    const others = Array.from(map.entries())
-      .filter(([email]) => !me || email !== me.email)
-      .slice(0, 6);
-
-    if (!others.length) {
-      listBox.innerHTML = '<p class="muted">Namoonni biroo yeroo galmaa\'an asitti mul\'atu.</p>';
-      return;
-    }
-
-    listBox.innerHTML = others
-      .map(
-        ([email, name]) =>
-          '<div class="person-card" style="margin-bottom:8px;padding:10px;">' +
-          '<div><strong style="cursor:pointer;" onclick="if(typeof openPublicProfile===\'function\')openPublicProfile(\'' +
-          nmEsc(email) +
-          "')\">" +
-          nmEsc(name) +
-          '</strong><div class="muted">' +
-          nmEsc(email) +
-          "</div></div>" +
-          '<div class="person-actions">' +
-          '<button type="button" class="btn btn-sm btn-outline" onclick="if(typeof toggleFollow===\'function\')toggleFollow(\'' +
-          nmEsc(email) +
-          "')\">+ Follow</button>" +
-          '<button type="button" class="btn btn-sm btn-outline" onclick="if(typeof openDirectChat===\'function\')openDirectChat(\'' +
-          nmEsc(email) +
-          "')\">💬</button>" +
-          "</div></div>"
-      )
-      .join("");
-  }
-
-  // 4. Footer Copyright & Social Links yoo hin jiraanne dabaluu
-  function nmEnsureFooter() {
-    if (document.getElementById("nm-appended-footer")) return;
-    const main = document.querySelector("main.container") || document.body;
-    const footer = document.createElement("footer");
-    footer.id = "nm-appended-footer";
-    footer.className = "site-footer";
-    footer.innerHTML =
-      '<div class="social-row">' +
-      '<a class="social-pill" href="https://nesru.dev" target="_blank" rel="noopener">🌐 Website</a>' +
-      '<a class="social-pill" href="https://t.me/" target="_blank" rel="noopener">✈️ Telegram</a>' +
-      '<a class="social-pill" href="https://facebook.com/" target="_blank" rel="noopener">📘 Facebook</a>' +
-      '<a class="social-pill" href="https://youtube.com/" target="_blank" rel="noopener">▶️ YouTube</a>' +
-      '<a class="social-pill" href="https://github.com/rammis-nas" target="_blank" rel="noopener">💻 GitHub</a>' +
-      '<a class="social-pill" href="mailto:nesrumichael@gmail.com">✉️ Email</a>' +
-      "</div>" +
-      '<div class="copyright-line"><strong>&copy; 2026 Nesru Michael.</strong> Mirgi hundinuu seeraan eegamaadha.</div>';
-    main.appendChild(footer);
-  }
-
-  window.addEventListener("DOMContentLoaded", function () {
-    nmEnsureBellButton();
-    nmEnsureFeedExtras();
-    nmEnsureFooter();
-    nmSyncAuthBox();
-    setTimeout(function () {
-      nmSyncAuthBox();
-      nmRenderFeedUsers();
-    }, 350);
-  });
-
-  document.addEventListener("click", function () {
-    setTimeout(function () {
-      nmSyncAuthBox();
-      nmRenderFeedUsers();
-    }, 180);
-  });
-
-  document.addEventListener("submit", function () {
-    setTimeout(function () {
-      nmSyncAuthBox();
-      nmRenderFeedUsers();
-      const me = nmGetCurrentUser();
-      if (me) {
-        nmPushNotif("Hojii Haaraa", "Jijjiiramni keessan galmaa'eera.", "view-feed");
-      }
-    }, 280);
-  });
-})();
-                       </script> <!-- ==========================================================
-     NESRU MICHAEL PWA MANIFEST & SERVICE WORKER HELPER
-     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
-     ========================================================== -->
-<div id="nm-pwa-tools-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmClosePwaTools()">
-  <div class="modal-card" style="max-width:700px;">
-    <div class="modal-header">
-      <h3>📱 PWA Manifest, Icons & Service Worker</h3>
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmClosePwaTools()">✕ Cufi</button>
-    </div>
-
-    <div class="muted" style="margin-bottom:10px;">
-      Qophii <strong>Nesru App</strong> (`rammis-nas.github.io/Nesru-michael-web-app/`) gara `.apk` jijjiiruuf[span_3](start_span)[span_3](end_span).
-    </div>
-
-    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-      <canvas id="nm-pwa-icon-192" width="192" height="192" style="width:72px;height:72px;border-radius:14px;border:1px solid #cbd5e1;"></canvas>
-      <canvas id="nm-pwa-icon-512" width="512" height="512" style="width:72px;height:72px;border-radius:14px;border:1px solid #cbd5e1;"></canvas>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-primary btn-sm" onclick="nmDownloadIconCanvas('nm-pwa-icon-192', 'icon-192.png')">⬇ icon-192.png</button>
-        <button type="button" class="btn btn-primary btn-sm" onclick="nmDownloadIconCanvas('nm-pwa-icon-512', 'icon-512.png')">⬇ icon-512.png</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="nmDownloadJsonFile('manifest.json', nmBuildManifestJson())">⬇ manifest.json</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="nmDownloadJsonFile('sw.js', nmBuildSwCode())">⬇ sw.js</button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="nm-manifest-output">manifest.json (GitHub repository keessatti galchi)</label>
-      <textarea id="nm-manifest-output" rows="10" style="width:100%;font-family:monospace;font-size:12px;"></textarea>
-      <div style="margin-top:6px;display:flex;gap:8px;">
-        <button type="button" class="btn btn-outline btn-sm" onclick="nmCopyTextArea('nm-manifest-output')">📋 Copy manifest.json</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="nmShowSwInBox()">📄 sw.js Agarsiisi</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-(function () {
-  function nmBuildManifestObject() {
-    return {
-      id: "./",
-      name: "Nesru Michael",
-      short_name: "Nesru App",
-      description: "Shared Feed, Like, Comment, Share, Follow, Add Friend fi Live Chat app.",
-      start_url: "./",
-      scope: "./",
-      display: "standalone",
-      background_color: "#0f172a",
-      theme_color: "#0f172a",
-      orientation: "portrait-primary",
-      icons: [
-        {
-          src: "./icon-192.png",
-          sizes: "192x192",
-          type: "image/png",
-          purpose: "any maskable"
-        },
-        {
-          src: "./icon-512.png",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any maskable"
-        }
-      ]
-    };
-  }
-
-  window.nmBuildManifestJson = function () {
-    return JSON.stringify(nmBuildManifestObject(), null, 2);
-  };
-
-  window.nmBuildSwCode = function () {
-    return [
-      'const CACHE_NAME = "nesru-michael-pwa-v1";',
-      'const ASSETS = ["./", "./index.html", "./manifest.json"];',
-      "",
-      'self.addEventListener("install", (event) => {',
-      "  event.waitUntil(",
-      '    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {})',
-      "  );",
-      "  self.skipWaiting();",
-      "});",
-      "",
-      'self.addEventListener("activate", (event) => {',
-      "  event.waitUntil(",
-      "    caches.keys().then((keys) =>",
-      "      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))",
-      "    )",
-      "  );",
-      "  self.clients.claim();",
-      "});",
-      "",
-      'self.addEventListener("fetch", (event) => {',
-      '  if (event.request.method !== "GET") return;',
-      "  event.respondWith(",
-      "    fetch(event.request).catch(() => caches.match(event.request))",
-      "  );",
-      "});"
-    ].join("\n");
-  };
-
-  function nmDrawBadgeIcon(canvasId, size) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const grad = ctx.createLinearGradient(0, 0, size, size);
-    grad.addColorStop(0, "#1d4ed8");
-    grad.addColorStop(1, "#0f172a");
-    ctx.fillStyle = grad;
-
-    const r = Math.round(size * 0.2);
-    ctx.beginPath();
-    ctx.roundRect(0, 0, size, size, r);
-    ctx.fill();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold " + Math.round(size * 0.36) + "px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("NM", size / 2, size / 2 + Math.round(size * 0.02));
-  }
-
-  window.nmDownloadIconCanvas = function (canvasId, fileName) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    canvas.toBlob(function (blob) {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }, "image/png");
-  };
-
-  window.nmDownloadJsonFile = function (fileName, content) {
-    const blob = new Blob([content], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
-  window.nmCopyTextArea = function (id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    navigator.clipboard?.writeText(el.value).catch(() => {
-      el.select();
-      document.execCommand("copy");
-    });
-    if (typeof showToast === "function") showToast("Copy ta'eera!");
-  };
-
-  window.nmShowSwInBox = function () {
-    const el = document.getElementById("nm-manifest-output");
-    if (el) el.value = nmBuildSwCode();
-  };
-
-  window.nmOpenPwaTools = function () {
-    const m = document.getElementById("nm-pwa-tools-modal");
-    const area = document.getElementById("nm-manifest-output");
-    nmDrawBadgeIcon("nm-pwa-icon-192", 192);
-    nmDrawBadgeIcon("nm-pwa-icon-512", 512);
-    if (area) area.value = nmBuildManifestJson();
-    if (m) m.classList.remove("hidden");
-  };
-
-  window.nmClosePwaTools = function () {
-    const m = document.getElementById("nm-pwa-tools-modal");
-    if (m) m.classList.add("hidden");
-  };
-
-  function nmEnsureManifestHeadLink() {
-    if (!document.querySelector('link[rel="manifest"]')) {
-      const link = document.createElement("link");
-      link.rel = "manifest";
-      link.href = "./manifest.json";
-      document.head.appendChild(link);
-    }
-    if (!document.querySelector('meta[name="theme-color"]')) {
-      const meta = document.createElement("meta");
-      meta.name = "theme-color";
-      meta.content = "#0f172a";
-      document.head.appendChild(meta);
-    }
-  }
-
-  function nmEnsurePwaButton() {
-    if (document.getElementById("nm-open-pwa-tools-btn")) return;
-    const topbar = document.querySelector(".topbar");
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "nm-open-pwa-tools-btn";
-    btn.className = "btn btn-sm btn-outline";
-    btn.textContent = "📱 PWA Tools";
-    btn.onclick = nmOpenPwaTools;
-
-    if (topbar) {
-      topbar.appendChild(btn);
-    } else {
-      btn.style.position = "fixed";
-      btn.style.bottom = "28px";
-      btn.style.right = "16px";
-      btn.style.zIndex = "999";
-      document.body.appendChild(btn);
-    }
-  }
-
-  function nmRegisterServiceWorker() {
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js").catch(function () {});
-      });
-    }
-  }
-
-  nmEnsureManifestHeadLink();
-  nmRegisterServiceWorker();
-  window.addEventListener("DOMContentLoaded", function () {
-    nmEnsureManifestHeadLink();
-    nmEnsurePwaButton();
-    nmDrawBadgeIcon("nm-pwa-icon-192", 192);
-    nmDrawBadgeIcon("nm-pwa-icon-512", 512);
-  });
-})();
-</script><!-- ==========================================================
-     NESRU MICHAEL HIDE SUPABASE UI (APPEND BEFORE </body>)
-     Keeps Supabase config/logic running while hiding UI cards/buttons
-     ========================================================== -->
-<style id="nm-hide-supabase-ui-style">
-  /* Qabduu "Supabase Cloud" gubbaa jiru dhoksuuf */
-  button[onclick*="supabase" i],
-  button[id*="supabase" i],
-  a[href*="supabase" i],
-  .supabase-btn,
-  #supabase-cloud-btn {
-    display: none !important;
-  }
-
-  /* Sanduuqa "Qindaa'ina Supabase Cloud" (URL & Anon Key) dhoksuuf */
-  #supabase-url,
-  #supabase-anon-key,
-  #supabase-key,
-  [id*="supabase-config" i],
-  [id*="supabase-settings" i],
-  [class*="supabase-config" i],
-  [class*="supabase-settings" i] {
-    display: none !important;
-  }
-</style>
-
-<script>
-(function () {
-  function nmHideSupabaseBlocks() {
-    // 1. Qabduu qofa kan "Supabase Cloud" jedhu dhoksuu
-    document.querySelectorAll("button, a").forEach((el) => {
-      const txt = (el.textContent || "").trim().toLowerCase();
-      if (txt === "supabase cloud" || txt === "qindaa'ina ol-kaa'i") {
-        // Yoo qabduun kun card qindaa'inaa keessa jiraate card sana dhoksa
-        const card = el.closest(".card, .box, .panel, .modal-card, section, div");
-        if (card && /qindaa'ina supabase cloud|supabase project url|supabase anon key/i.test(card.textContent || "")) {
-          card.style.setProperty("display", "none", "important");
-        } else {
-          el.style.setProperty("display", "none", "important");
-        }
-      }
-    });
-
-    // 2. Card guutuu kan "Qindaa'ina Supabase Cloud" qabu dhoksuu
-    document.querySelectorAll("div, section, article, .card").forEach((box) => {
-      const raw = (box.textContent || "");
-      const hasHeader = /qindaa'ina supabase cloud/i.test(raw);
-      const hasInputs = box.querySelector('input[placeholder*="supabase" i], input[value*="supabase.co" i], input[type="password"]');
-      if (hasHeader && hasInputs && box.children.length <= 8) {
-        box.style.setProperty("display", "none", "important");
-      }
-    });
-  }
-
-  window.addEventListener("DOMContentLoaded", nmHideSupabaseBlocks);
-  setTimeout(nmHideSupabaseBlocks, 300);
-  setTimeout(nmHideSupabaseBlocks, 1200);
-})();
-</script><!-- ==========================================================
-     NESRU MICHAEL AUTH (SIGN UP, SIGN IN & LOGOUT) HELPER
-     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
-     ========================================================== -->
-<div id="nm-auth-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmCloseAuthModal()">
-  <div class="modal-card" style="max-width:460px;">
-    <div class="modal-header">
-      <h3 id="nm-auth-modal-title">🔐 Account</h3>
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseAuthModal()">✕ Cufi</button>
-    </div>
-
-    <div id="nm-auth-logged-in-box" class="hidden" style="margin-bottom:14px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;">
-      <div><strong>Seentaniirtu:</strong> <span id="nm-auth-user-email"></span></div>
-      <div class="muted" id="nm-auth-user-id" style="margin-top:4px;word-break:break-all;"></div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-outline btn-sm" onclick="nmLogoutUser()">🚪 Logout (Ba'i)</button>
-      </div>
-    </div>
-
-    <div id="nm-auth-forms-box">
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button type="button" id="nm-tab-login" class="btn btn-primary btn-sm" onclick="nmSwitchAuthTab('login')">Seeni (Login)</button>
-        <button type="button" id="nm-tab-signup" class="btn btn-outline btn-sm" onclick="nmSwitchAuthTab('signup')">Account Uumi (Sign Up)</button>
-      </div>
-
-      <div class="form-group" style="margin-bottom:10px;">
-        <label for="nm-auth-email">Email</label>
-        <input type="email" id="nm-auth-email" placeholder="example@gmail.com" style="width:100%;" />
-      </div>
-
-      <div class="form-group" style="margin-bottom:12px;">
-        <label for="nm-auth-password">Password (yoo xiqqaate 6)</label>
-        <input type="password" id="nm-auth-password" placeholder="********" style="width:100%;" />
-      </div>
-
-      <button type="button" id="nm-auth-submit-btn" class="btn btn-primary btn-sm" onclick="nmSubmitAuthForm()">Seeni</button>
-    </div>
-
-    <div id="nm-auth-status" class="muted" style="margin-top:10px;"></div>
-  </div>
-</div>
-
-<script>
-(function () {
-  let nmAuthMode = "login";
-
-  function nmSetAuthStatus(msg) {
-    const el = document.getElementById("nm-auth-status");
-    if (el) el.textContent = msg;
-  }
-
-  function nmFindSupabaseClient() {
-    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
-    if (window.sb && window.sb.auth) return window.sb;
-    if (window._supabase && window._supabase.auth) return window._supabase;
-
-    const urlInput = document.querySelector('input[value*="supabase.co"], input[placeholder*="supabase" i]');
-    const keyInput = document.querySelector('input[type="password"][id*="key" i], input[id*="anon" i], input[placeholder*="key" i]');
-    const url = (urlInput && urlInput.value ? urlInput.value.trim() : "") || "https://uvwkkeqicejfuqczclbt.supabase.co";
-    const key = (keyInput && keyInput.value ? keyInput.value.trim() : "") || "";
-
-    if (window.supabase && typeof window.supabase.createClient === "function" && url && key) {
-      window.nmFallbackSb = window.nmFallbackSb || window.supabase.createClient(url, key);
-      return window.nmFallbackSb;
-    }
-    return null;
-  }
-
-  async function nmRefreshAuthUi() {
-    const client = nmFindSupabaseClient();
-    const loggedInBox = document.getElementById("nm-auth-logged-in-box");
-    const formsBox = document.getElementById("nm-auth-forms-box");
-    const emailSpan = document.getElementById("nm-auth-user-email");
-    const idSpan = document.getElementById("nm-auth-user-id");
-    const btn = document.getElementById("nm-open-auth-btn");
-
-    let user = null;
-    if (client && client.auth && typeof client.auth.getUser === "function") {
-      try {
-        const { data } = await client.auth.getUser();
-        user = data && data.user ? data.user : null;
-      } catch (e) {}
-    }
-
-    if (user) {
-      if (loggedInBox) loggedInBox.classList.remove("hidden");
-      if (formsBox) formsBox.classList.add("hidden");
-      if (emailSpan) emailSpan.textContent = user.email || "User";
-      if (idSpan) idSpan.textContent = "ID: " + (user.id || "");
-      if (btn) btn.textContent = "🚪 Account / Logout";
-    } else {
-      if (loggedInBox) loggedInBox.classList.add("hidden");
-      if (formsBox) formsBox.classList.remove("hidden");
-      if (btn) btn.textContent = "🔐 Login / Sign Up";
-    }
-  }
-
-  window.nmOpenAuthModal = function () {
-    const m = document.getElementById("nm-auth-modal");
-    if (m) m.classList.remove("hidden");
-    nmSetAuthStatus("");
-    nmRefreshAuthUi();
-  };
-
-  window.nmCloseAuthModal = function () {
-    const m = document.getElementById("nm-auth-modal");
-    if (m) m.classList.add("hidden");
-  };
-
-  window.nmSwitchAuthTab = function (mode) {
-    nmAuthMode = mode === "signup" ? "signup" : "login";
-    const loginTab = document.getElementById("nm-tab-login");
-    const signupTab = document.getElementById("nm-tab-signup");
-    const submitBtn = document.getElementById("nm-auth-submit-btn");
-
-    if (loginTab) loginTab.className = nmAuthMode === "login" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
-    if (signupTab) signupTab.className = nmAuthMode === "signup" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
-    if (submitBtn) submitBtn.textContent = nmAuthMode === "signup" ? "Account Uumi" : "Seeni";
-    nmSetAuthStatus("");
-  };
-
-  window.nmSubmitAuthForm = async function () {
-    const client = nmFindSupabaseClient();
-    const emailEl = document.getElementById("nm-auth-email");
-    const passEl = document.getElementById("nm-auth-password");
-    const email = emailEl ? emailEl.value.trim() : "";
-    const password = passEl ? passEl.value : "";
-
-    if (!client || !client.auth) {
-      nmSetAuthStatus("Supabase client hin argamne. Qindaa'ina Supabase mirkaneessi.");
-      return;
-    }
-    if (!email || !password) {
-      nmSetAuthStatus("Maaloo Email fi Password guuti.");
-      return;
-    }
-
-    nmSetAuthStatus(nmAuthMode === "signup" ? "Account uumaa jira..." : "Seenaa jira...");
-
-    try {
-      if (nmAuthMode === "signup") {
-        const { data, error } = await client.auth.signUp({ email, password });
-        if (error) {
-          nmSetAuthStatus("Dogoggora: " + error.message);
-          return;
-        }
-        if (data && data.session) {
-          nmSetAuthStatus("Account uumameera, seentaniirtu!");
-          await nmRefreshAuthUi();
-          setTimeout(nmCloseAuthModal, 700);
-        } else {
-          nmSetAuthStatus("Account uumameera! Email kee mirkaneessiitii 'Seeni (Login)' tuqi.");
-        }
-      } else {
-        const { error } = await client.auth.signInWithPassword({ email, password });
-        if (error) {
-          nmSetAuthStatus("Seenuu dide: " + error.message);
-          return;
-        }
-        nmSetAuthStatus("Milkaa'inaan seentaniirtu!");
-        await nmRefreshAuthUi();
-        setTimeout(nmCloseAuthModal, 700);
-      }
-    } catch (err) {
-      nmSetAuthStatus("Rakkoon uumame: " + (err && err.message ? err.message : err));
-    }
-  };
-
-  window.nmLogoutUser = async function () {
-    const client = nmFindSupabaseClient();
-    nmSetAuthStatus("Ba'aa jira (Logging out)...");
-    try {
-      if (client && client.auth && typeof client.auth.signOut === "function") {
-        await client.auth.signOut();
-      }
-      localStorage.removeItem("sb-uvwkkeqicejfuqczclbt-auth-token");
-      nmSetAuthStatus("Logout ta'eera. Deebi'ee seenuuf Email fi Password galchi.");
-      await nmRefreshAuthUi();
-    } catch (e) {
-      nmSetAuthStatus("Logout irratti rakkoon uumame.");
-    }
-  };
-
-  function nmEnsureAuthButton() {
-    if (document.getElementById("nm-open-auth-btn")) return;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "nm-open-auth-btn";
-    btn.className = "btn btn-sm btn-primary";
-    btn.textContent = "🔐 Login / Sign Up";
-    btn.onclick = nmOpenAuthModal;
-
-    const topbar = document.querySelector(".topbar");
-    if (topbar) {
-      topbar.appendChild(btn);
-    } else {
-      btn.style.position = "fixed";
-      btn.style.bottom = "76px";
-      btn.style.right = "16px";
-      btn.style.zIndex = "999";
-      document.body.appendChild(btn);
-    }
-    nmRefreshAuthUi();
-  }
-
-  window.addEventListener("DOMContentLoaded", nmEnsureAuthButton);
-  setTimeout(nmRefreshAuthUi, 500);
-})();
-</script><!-- ==========================================================
-     NESRU MICHAEL ABOUT APPEND HELPER (APPEND BEFORE </body>)
-     Appends bio text to About section/modal without deleting old text
-     ========================================================== -->
-<script>
-(function () {
-  const NM_ABOUT_EXTRA =
-    "Nesru michael Barataa waggaa sadaffaa Sagantaa Barnoota Educational planning and managemant Oda Bultum University";
-
-  function nmAppendToAbout() {
-    const candidates = Array.from(
-      document.querySelectorAll("div, section, article, p, .card, .modal-card, .box")
-    );
-
-    candidates.forEach((el) => {
-      if (el.dataset && el.dataset.nmAboutAppended === "1") return;
-      if (el.children && el.children.length > 10) return;
-
-      const text = (el.textContent || "").trim();
-      if (!text) return;
-
-      const isAboutBlock =
-        /^\s*about\s*$/i.test(text) ||
-        /\babout\b/i.test(text) ||
-        (el.id && /about/i.test(el.id)) ||
-        (el.className && typeof el.className === "string" && /about/i.test(el.className));
-
-      if (!isAboutBlock) return;
-      if (text.includes(NM_ABOUT_EXTRA)) {
-        if (el.dataset) el.dataset.nmAboutAppended = "1";
-        return;
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2600);
       }
 
-      const target =
-        el.querySelector("p, .about-text, .about-body, .description, .muted") || el;
-
-      if (target && !target.textContent.includes(NM_ABOUT_EXTRA)) {
-        const note = document.createElement("div");
-        note.className = "nm-about-bio-extra";
-        note.style.marginTop = "8px";
-        note.textContent = NM_ABOUT_EXTRA;
-        target.appendChild(note);
-        if (el.dataset) el.dataset.nmAboutAppended = "1";
-      }
-    });
-  }
-
-  window.addEventListener("DOMContentLoaded", nmAppendToAbout);
-  document.addEventListener("click", function () {
-    setTimeout(nmAppendToAbout, 120);
-  });
-  setTimeout(nmAppendToAbout, 400);
-})();
-</script><!-- ==========================================================
-     NESRU MICHAEL AUTH GATE, PEOPLE DIRECTORY & POST EDIT/DELETE
-     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
-     ========================================================== -->
-<style id="nm-auth-gate-styles">
-  #nm-auth-gate-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    color: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    overflow-y: auto;
-  }
-  #nm-auth-gate-screen.hidden {
-    display: none !important;
-  }
-  .nm-gate-card {
-    width: 100%;
-    max-width: 420px;
-    background: #ffffff;
-    color: #0f172a;
-    border-radius: 16px;
-    padding: 22px;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
-  }
-  .nm-post-owner-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    flex-wrap: wrap;
-  }
-  .nm-user-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
-  }
-</style>
-
-<!-- 1. FUULA LOGIN / SIGN UP QOFA (YOO HIN SEENIN) -->
-<div id="nm-auth-gate-screen">
-  <div class="nm-gate-card">
-    <div style="text-align:center;margin-bottom:14px;">
-      <div style="font-size:28px;font-weight:800;color:#1d4ed8;">NM</div>
-      <h2 style="margin:4px 0;">Nesru Michael</h2>
-      <p class="muted" style="margin:0;">Itti fufuuf jalqaba Seeni (Login) ykn Account Uumi (Sign Up).</p>
-    </div>
-
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button type="button" id="nm-gate-tab-login" class="btn btn-primary btn-sm" style="flex:1;" onclick="nmGateSetMode('login')">Seeni (Login)</button>
-      <button type="button" id="nm-gate-tab-signup" class="btn btn-outline btn-sm" style="flex:1;" onclick="nmGateSetMode('signup')">Sign Up (Galmaa'i)</button>
-    </div>
-
-    <div id="nm-gate-name-wrap" class="form-group hidden" style="margin-bottom:10px;">
-      <label for="nm-gate-fullname">Maqaa Guutuu</label>
-      <input type="text" id="nm-gate-fullname" placeholder="Maqaa kee barreessi" style="width:100%;" />
-    </div>
-
-    <div class="form-group" style="margin-bottom:10px;">
-      <label for="nm-gate-email">Email</label>
-      <input type="email" id="nm-gate-email" placeholder="example@gmail.com" style="width:100%;" />
-    </div>
-
-    <div class="form-group" style="margin-bottom:14px;">
-      <label for="nm-gate-password">Password (yoo xiqqaate 6)</label>
-      <input type="password" id="nm-gate-password" placeholder="********" style="width:100%;" />
-    </div>
-
-    <button type="button" id="nm-gate-submit-btn" class="btn btn-primary" style="width:100%;" onclick="nmGateSubmitAuth()">Seeni</button>
-    <div id="nm-gate-status" class="muted" style="margin-top:10px;text-align:center;"></div>
-  </div>
-</div>
-
-<!-- 2. MODAL FAYYADAMTOOTA HUNDAA, FOLLOW & ADD FRIEND -->
-<div id="nm-people-dir-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmClosePeopleDir()">
-  <div class="modal-card" style="max-width:560px;">
-    <div class="modal-header">
-      <h3>👥 Fayyadamtoota, Follow & Add Friend</h3>
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmClosePeopleDir()">✕ Cufi</button>
-    </div>
-    <div id="nm-people-dir-list">Fayyadamtoota fe'aa jira...</div>
-  </div>
-</div>
-
-<!-- 3. MODAL MAXXANSA OFII EDIT GOCHUU -->
-<div id="nm-edit-post-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmCloseEditPostModal()">
-  <div class="modal-card" style="max-width:500px;">
-    <div class="modal-header">
-      <h3>✏️ Maxxansa Sirreessi (Edit Post)</h3>
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseEditPostModal()">✕ Cufi</button>
-    </div>
-    <input type="hidden" id="nm-edit-post-id" />
-    <div class="form-group" style="margin-bottom:12px;">
-      <label for="nm-edit-post-textarea">Qabiyyee Maxxansaa</label>
-      <textarea id="nm-edit-post-textarea" rows="5" style="width:100%;"></textarea>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseEditPostModal()">Haqi</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="nmSaveEditedPost()">💾 Jijjiirama Ol-kaa'i</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(function () {
-  let nmGateMode = "login";
-  let nmCurrentUser = null;
-  let nmEditingCardEl = null;
-
-  function nmGetSb() {
-    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
-    if (window.sb && window.sb.auth) return window.sb;
-    if (window._supabase && window._supabase.auth) return window._supabase;
-
-    const url = "https://uvwkkeqicejfuqczclbt.supabase.co";
-    const keyInput = document.querySelector('input[id*="anon" i], input[placeholder*="key" i]');
-    const storedKey = localStorage.getItem("supabase_anon_key") || localStorage.getItem("nm_sb_key") || "";
-    const key = (keyInput && keyInput.value ? keyInput.value.trim() : "") || storedKey;
-
-    if (window.supabase && typeof window.supabase.createClient === "function" && key) {
-      window.nmAutoSb = window.nmAutoSb || window.supabase.createClient(url, key);
-      return window.nmAutoSb;
-    }
-    return null;
-  }
-
-  function nmEsc(v) {
-    return String(v ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  window.nmGateSetMode = function (mode) {
-    nmGateMode = mode === "signup" ? "signup" : "login";
-    document.getElementById("nm-gate-tab-login").className =
-      nmGateMode === "login" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
-    document.getElementById("nm-gate-tab-signup").className =
-      nmGateMode === "signup" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
-    document.getElementById("nm-gate-name-wrap").classList.toggle("hidden", nmGateMode !== "signup");
-    document.getElementById("nm-gate-submit-btn").textContent =
-      nmGateMode === "signup" ? "Account Uumi" : "Seeni";
-    document.getElementById("nm-gate-status").textContent = "";
-  };
-
-  async function nmCheckGateSession() {
-    const gate = document.getElementById("nm-auth-gate-screen");
-    const sb = nmGetSb();
-    if (!sb || !sb.auth) return;
-
-    try {
-      const { data } = await sb.auth.getSession();
-      const user = data && data.session ? data.session.user : null;
-      nmCurrentUser = user;
-
-      if (user) {
-        if (gate) gate.classList.add("hidden");
-        document.body.style.overflow = "";
-        nmDecorateUserPosts();
-      } else {
-        if (gate) gate.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
-      }
-    } catch (e) {}
-  }
-
-  window.nmGateSubmitAuth = async function () {
-    const sb = nmGetSb();
-    const statusEl = document.getElementById("nm-gate-status");
-    const email = (document.getElementById("nm-gate-email").value || "").trim();
-    const password = document.getElementById("nm-gate-password").value || "";
-    const fullName = (document.getElementById("nm-gate-fullname").value || "").trim();
-
-    if (!sb || !sb.auth) {
-      statusEl.textContent = "Supabase hin argamne. Qindaa'ina Supabase mirkaneessi.";
-      return;
-    }
-    if (!email || !password) {
-      statusEl.textContent = "Email fi Password guuti.";
-      return;
-    }
-
-    statusEl.textContent = nmGateMode === "signup" ? "Account uumaa jira..." : "Seenaa jira...";
-
-    try {
-      if (nmGateMode === "signup") {
-        const { data, error } = await sb.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName || email.split("@")[0] } }
-        });
-        if (error) {
-          statusEl.textContent = "Dogoggora: " + error.message;
-          return;
-        }
-        if (data && data.user) {
-          await sb.from("profiles").upsert({
-            id: data.user.id,
-            email: email,
-            full_name: fullName || email.split("@")[0]
-          }).catch(() => {});
-        }
-        if (data && data.session) {
-          await nmCheckGateSession();
-        } else {
-          statusEl.textContent = "Account uumameera! Amma 'Seeni (Login)' tuqii seeni.";
-          nmGateSetMode("login");
-        }
-      } else {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) {
-          statusEl.textContent = "Seenuu dide: " + error.message;
-          return;
-        }
-        await nmCheckGateSession();
-      }
-    } catch (err) {
-      statusEl.textContent = "Rakkoon uumame: " + (err.message || err);
-    }
-  };
-
-  /* ==========================================================
-     FAYYADAMTOOTA HUNDAA, FOLLOW & ADD FRIEND
-     ========================================================== */
-  window.nmOpenPeopleDir = async function () {
-    const modal = document.getElementById("nm-people-dir-modal");
-    const listEl = document.getElementById("nm-people-dir-list");
-    if (modal) modal.classList.remove("hidden");
-    listEl.innerHTML = "Fayyadamtoota fe'aa jira...";
-
-    const sb = nmGetSb();
-    if (!sb) {
-      listEl.innerHTML = "Supabase hin argamne.";
-      return;
-    }
-
-    const { data: users, error } = await sb.from("profiles").select("*").limit(100);
-    if (error || !users || !users.length) {
-      listEl.innerHTML = "Fayyadamtoonni galmaa'an hin argamne ykn table 'profiles' hin jiru.";
-      return;
-    }
-
-    const myId = nmCurrentUser ? nmCurrentUser.id : "";
-    const follows = JSON.parse(localStorage.getItem("nm_local_follows") || "{}");
-    const friends = JSON.parse(localStorage.getItem("nm_local_friends") || "{}");
-
-    listEl.innerHTML = users
-      .filter((u) => u.id !== myId)
-      .map((u) => {
-        const name = u.full_name || u.username || u.email || "User";
-        const isFol = !!follows[u.id];
-        const isFr = !!friends[u.id];
-        return (
-          '<div class="nm-user-row">' +
-          '<div><strong>' + nmEsc(name) + '</strong><div class="muted" style="font-size:12px;">' + nmEsc(u.email || "") + "</div></div>" +
-          '<div style="display:flex;gap:6px;">' +
-          '<button type="button" class="btn btn-sm ' + (isFol ? "btn-primary" : "btn-outline") + '" onclick="nmToggleFollowUser(\'' + nmEsc(u.id) + '\', this)">' +
-          (isFol ? "✓ Following" : "+ Follow") + "</button>" +
-          '<button type="button" class="btn btn-sm ' + (isFr ? "btn-primary" : "btn-outline") + '" onclick="nmToggleFriendUser(\'' + nmEsc(u.id) + '\', this)">' +
-          (isFr ? "🤝 Friend" : "+ Add Friend") + "</button>" +
-          "</div></div>"
-        );
-      })
-      .join("") || "Fayyadamtoonni biroo hin jiran.";
-  };
-
-  window.nmClosePeopleDir = function () {
-    const modal = document.getElementById("nm-people-dir-modal");
-    if (modal) modal.classList.add("hidden");
-  };
-
-  window.nmToggleFollowUser = async function (targetId, btn) {
-    const sb = nmGetSb();
-    const myId = nmCurrentUser ? nmCurrentUser.id : "";
-    const follows = JSON.parse(localStorage.getItem("nm_local_follows") || "{}");
-    const nextState = !follows[targetId];
-    follows[targetId] = nextState;
-    localStorage.setItem("nm_local_follows", JSON.stringify(follows));
-
-    if (btn) {
-      btn.textContent = nextState ? "✓ Following" : "+ Follow";
-      btn.className = nextState ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline";
-    }
-    if (sb && myId) {
-      if (nextState) {
-        await sb.from("follows").upsert({ follower_id: myId, following_id: targetId }).catch(() => {});
-      } else {
-        await sb.from("follows").delete().match({ follower_id: myId, following_id: targetId }).catch(() => {});
-      }
-    }
-  };
-
-  window.nmToggleFriendUser = async function (targetId, btn) {
-    const sb = nmGetSb();
-    const myId = nmCurrentUser ? nmCurrentUser.id : "";
-    const friends = JSON.parse(localStorage.getItem("nm_local_friends") || "{}");
-    const nextState = !friends[targetId];
-    friends[targetId] = nextState;
-    localStorage.setItem("nm_local_friends", JSON.stringify(friends));
-
-    if (btn) {
-      btn.textContent = nextState ? "🤝 Friend" : "+ Add Friend";
-      btn.className = nextState ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline";
-    }
-    if (sb && myId) {
-      if (nextState) {
-        await sb.from("friend_requests").upsert({ sender_id: myId, receiver_id: targetId, status: "accepted" }).catch(() => {});
-      } else {
-        await sb.from("friend_requests").delete().match({ sender_id: myId, receiver_id: targetId }).catch(() => {});
-      }
-    }
-  };
-
-  /* ==========================================================
-     MAXXANSA OFII EDIT & DELETE GOCHUU
-     ========================================================== */
-  function nmDecorateUserPosts() {
-    if (!nmCurrentUser) return;
-    const myId = nmCurrentUser.id;
-    const myEmail = (nmCurrentUser.email || "").toLowerCase();
-
-    document.querySelectorAll("[data-post-id], .post-card, .feed-item, article").forEach((card) => {
-      if (card.dataset.nmPostActionsAdded === "1") return;
-      const postId = card.dataset.postId || card.getAttribute("data-id") || "";
-      const authorId = card.dataset.userId || card.getAttribute("data-author-id") || "";
-      const cardText = (card.textContent || "").toLowerCase();
-
-      const isMine =
-        (authorId && authorId === myId) ||
-        (myEmail && cardText.includes(myEmail));
-
-      if (!isMine && !postId) return;
-      if (authorId && authorId !== myId) return;
-
-      card.dataset.nmPostActionsAdded = "1";
-      const bar = document.createElement("div");
-      bar.className = "nm-post-owner-actions";
-      bar.innerHTML =
-        '<button type="button" class="btn btn-outline btn-sm" data-nm-edit="1">✏️ Edit (Sirreessi)</button>' +
-        '<button type="button" class="btn btn-outline btn-sm" data-nm-del="1">🗑️ Delete (Haqi)</button>';
-
-      bar.querySelector("[data-nm-edit]").onclick = function () {
-        nmOpenEditPostModal(postId, card);
-      };
-      bar.querySelector("[data-nm-del]").onclick = function () {
-        nmDeleteUserPost(postId, card);
+      window.setGateMode = function (mode) {
+        gateMode = mode === "signup" ? "signup" : "login";
+        document.getElementById("gate-tab-login").classList.toggle("active", gateMode === "login");
+        document.getElementById("gate-tab-signup").classList.toggle("active", gateMode === "signup");
+        document.getElementById("gate-name-group").classList.toggle("hidden", gateMode !== "signup");
+        document.getElementById("gate-submit-btn").textContent = gateMode === "signup" ? "Sign Up" : "Seeni";
+        document.getElementById("gate-msg").textContent = "";
       };
 
-      card.appendChild(bar);
-    });
-  }
-
-  window.nmOpenEditPostModal = function (postId, cardEl) {
-    nmEditingCardEl = cardEl;
-    document.getElementById("nm-edit-post-id").value = postId || "";
-    const bodyEl = cardEl.querySelector(".post-body, .post-content, p") || cardEl;
-    document.getElementById("nm-edit-post-textarea").value = (bodyEl.textContent || "").trim();
-    document.getElementById("nm-edit-post-modal").classList.remove("hidden");
-  };
-
-  window.nmCloseEditPostModal = function () {
-    document.getElementById("nm-edit-post-modal").classList.add("hidden");
-    nmEditingCardEl = null;
-  };
-
-  window.nmSaveEditedPost = async function () {
-    const postId = document.getElementById("nm-edit-post-id").value;
-    const newText = document.getElementById("nm-edit-post-textarea").value.trim();
-    if (!newText) return;
-
-    const sb = nmGetSb();
-    if (sb && postId && nmCurrentUser) {
-      await sb
-        .from("posts")
-        .update({ content: newText, body: newText })
-        .eq("id", postId)
-        .eq("user_id", nmCurrentUser.id)
-        .catch(() => {});
-    }
-
-    if (nmEditingCardEl) {
-      const bodyEl = nmEditingCardEl.querySelector(".post-body, .post-content, p");
-      if (bodyEl) bodyEl.textContent = newText;
-    }
-    nmCloseEditPostModal();
-    if (typeof showToast === "function") showToast("Maxxansi kee sirreeffameera!");
-  };
-
-  window.nmDeleteUserPost = async function (postId, cardEl) {
-    if (!confirm("Maxxansa kana dhuguma haquu barbaaddaa?")) return;
-    const sb = nmGetSb();
-    if (sb && postId && nmCurrentUser) {
-      await sb
-        .from("posts")
-        .delete()
-        .eq("id", postId)
-        .eq("user_id", nmCurrentUser.id)
-        .catch(() => {});
-    }
-    if (cardEl) cardEl.remove();
-    if (typeof showToast === "function") showToast("Maxxansi haqameera!");
-  };
-
-  function nmInjectDirButton() {
-    if (document.getElementById("nm-dir-topbar-btn")) return;
-    const topbar = document.querySelector(".topbar");
-    if (!topbar) return;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "nm-dir-topbar-btn";
-    btn.className = "btn btn-sm btn-outline";
-    btn.textContent = "👥 People / Friends";
-    btn.onclick = nmOpenPeopleDir;
-    topbar.appendChild(btn);
-  }
-
-  window.addEventListener("DOMContentLoaded", function () {
-    nmInjectDirButton();
-    nmCheckGateSession();
-    setInterval(nmDecorateUserPosts, 1500);
-
-    const sb = nmGetSb();
-    if (sb && sb.auth && typeof sb.auth.onAuthStateChange === "function") {
-      sb.auth.onAuthStateChange(function () {
-        nmCheckGateSession();
-      });
-    }
-  });
-})();
-</script><!-- ==========================================================
-     NESRU MICHAEL COMPLETE ADD-ON (APPEND BEFORE </body>)
-     ========================================================== -->
-<style id="nm-complete-addon-styles">
-  #nm-auth-gate-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    color: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    overflow-y: auto;
-  }
-  #nm-auth-gate-screen.hidden {
-    display: none !important;
-  }
-  .nm-gate-card {
-    width: 100%;
-    max-width: 420px;
-    background: #ffffff;
-    color: #0f172a;
-    border-radius: 16px;
-    padding: 22px;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
-  }
-  .nm-post-owner-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    flex-wrap: wrap;
-  }
-  .nm-user-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
-  }
-</style>
-
-<!-- 1. FUULA LOGIN / SIGN UP (YOO HIN SEENIN) -->
-<div id="nm-auth-gate-screen">
-  <div class="nm-gate-card">
-    <div style="text-align:center;margin-bottom:14px;">
-      <div style="font-size:28px;font-weight:800;color:#1d4ed8;">NM</div>
-      <h2 style="margin:4px 0;">Nesru Michael</h2>
-      <p class="muted" style="margin:0;">Itti fufuuf jalqaba Seeni (Login) ykn Account Uumi (Sign Up).</p>
-    </div>
-
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button type="button" id="nm-gate-tab-login" class="btn btn-primary btn-sm" style="flex:1;" onclick="nmGateSetMode('login')">Seeni (Login)</button>
-      <button type="button" id="nm-gate-tab-signup" class="btn btn-outline btn-sm" style="flex:1;" onclick="nmGateSetMode('signup')">Sign Up (Galmaa'i)</button>
-    </div>
-
-    <div id="nm-gate-name-wrap" class="form-group hidden" style="margin-bottom:10px;">
-      <label for="nm-gate-fullname">Maqaa Guutuu</label>
-      <input type="text" id="nm-gate-fullname" placeholder="Maqaa kee barreessi" style="width:100%;" />
-    </div>
-
-    <div class="form-group" style="margin-bottom:10px;">
-      <label for="nm-gate-email">Email</label>
-      <input type="email" id="nm-gate-email" placeholder="example@gmail.com" style="width:100%;" />
-    </div>
-
-    <div class="form-group" style="margin-bottom:14px;">
-      <label for="nm-gate-password">Password (yoo xiqqaate 6)</label>
-      <input type="password" id="nm-gate-password" placeholder="********" style="width:100%;" />
-    </div>
-
-    <button type="button" id="nm-gate-submit-btn" class="btn btn-primary" style="width:100%;" onclick="nmGateSubmitAuth()">Seeni</button>
-    <div id="nm-gate-status" class="muted" style="margin-top:10px;text-align:center;"></div>
-  </div>
-</div>
-
-<!-- 2. MODAL FAYYADAMTOOTA HUNDAA, FOLLOW & ADD FRIEND -->
-<div id="nm-people-dir-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmClosePeopleDir()">
-  <div class="modal-card" style="max-width:560px;">
-    <div class="modal-header">
-      <h3>👥 Fayyadamtoota, Follow & Add Friend</h3>
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmClosePeopleDir()">✕ Cufi</button>
-    </div>
-    <div id="nm-people-dir-list">Fayyadamtoota fe'aa jira...</div>
-  </div>
-</div>
-
-<!-- 3. MODAL MAXXANSA OFII EDIT GOCHUU -->
-<div id="nm-edit-post-modal" class="modal-backdrop hidden" onclick="if(event.target===this) nmCloseEditPostModal()">
-  <div class="modal-card" style="max-width:500px;">
-    <div class="modal-header">
-      <h3>✏️ Maxxansa Sirreessi (Edit Post)</h3>
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseEditPostModal()">✕ Cufi</button>
-    </div>
-    <input type="hidden" id="nm-edit-post-id" />
-    <div class="form-group" style="margin-bottom:12px;">
-      <label for="nm-edit-post-textarea">Qabiyyee Maxxansaa</label>
-      <textarea id="nm-edit-post-textarea" rows="5" style="width:100%;"></textarea>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button type="button" class="btn btn-outline btn-sm" onclick="nmCloseEditPostModal()">Haqi</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="nmSaveEditedPost()">💾 Jijjiirama Ol-kaa'i</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(function () {
-  const NM_SB_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
-  const NM_SB_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-
-  let nmGateMode = "login";
-  let nmCurrentUser = null;
-  let nmEditingCardEl = null;
-
-  function nmEsc(v) {
-    return String(v ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function nmGetSb() {
-    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
-    if (window.sb && window.sb.auth) return window.sb;
-    if (window._supabase && window._supabase.auth) return window._supabase;
-
-    const inputKeyEl = document.querySelector(
-      'input[id*="anon" i], input[id*="key" i], input[placeholder*="anon" i], input[placeholder*="key" i]'
-    );
-    const typedKey = inputKeyEl && inputKeyEl.value ? inputKeyEl.value.trim() : "";
-    const savedKey =
-      localStorage.getItem("supabase_anon_key") ||
-      localStorage.getItem("nm_sb_key") ||
-      localStorage.getItem("sb_anon_key") ||
-      "";
-
-    const finalKey = (NM_SB_ANON_KEY && NM_SB_ANON_KEY.trim()) || typedKey || savedKey;
-
-    if (finalKey) {
-      localStorage.setItem("supabase_anon_key", finalKey);
-      localStorage.setItem("nm_sb_key", finalKey);
-      if (inputKeyEl && !inputKeyEl.value) {
-        inputKeyEl.value = finalKey;
-      }
-    }
-
-    if (window.supabase && typeof window.supabase.createClient === "function" && finalKey) {
-      if (!window.supabaseClient || !window.supabaseClient.auth) {
-        window.supabaseClient = window.supabase.createClient(NM_SB_URL, finalKey);
-      }
-      if (!window.sb || !window.sb.auth) {
-        window.sb = window.supabaseClient;
-      }
-      return window.supabaseClient;
-    }
-    return null;
-  }
-
-  window.nmGateSetMode = function (mode) {
-    nmGateMode = mode === "signup" ? "signup" : "login";
-    document.getElementById("nm-gate-tab-login").className =
-      nmGateMode === "login" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
-    document.getElementById("nm-gate-tab-signup").className =
-      nmGateMode === "signup" ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm";
-    document.getElementById("nm-gate-name-wrap").classList.toggle("hidden", nmGateMode !== "signup");
-    document.getElementById("nm-gate-submit-btn").textContent =
-      nmGateMode === "signup" ? "Account Uumi" : "Seeni";
-    document.getElementById("nm-gate-status").textContent = "";
-  };
-
-  async function nmCheckGateSession() {
-    const gate = document.getElementById("nm-auth-gate-screen");
-    const sb = nmGetSb();
-    if (!sb || !sb.auth) return;
-
-    try {
-      const { data } = await sb.auth.getSession();
-      const user = data && data.session ? data.session.user : null;
-      nmCurrentUser = user;
-
-      if (user) {
-        if (gate) gate.classList.add("hidden");
-        document.body.style.overflow = "";
-        nmDecorateUserPosts();
-      } else {
-        if (gate) gate.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
-      }
-    } catch (e) {}
-  }
-
-  window.nmGateSubmitAuth = async function () {
-    const sb = nmGetSb();
-    const statusEl = document.getElementById("nm-gate-status");
-    const email = (document.getElementById("nm-gate-email").value || "").trim();
-    const password = document.getElementById("nm-gate-password").value || "";
-    const fullName = (document.getElementById("nm-gate-fullname").value || "").trim();
-
-    if (!sb || !sb.auth) {
-      statusEl.textContent = "Supabase hin argamne. Qindaa'ina Supabase mirkaneessi.";
-      return;
-    }
-    if (!email || !password) {
-      statusEl.textContent = "Email fi Password guuti.";
-      return;
-    }
-
-    statusEl.textContent = nmGateMode === "signup" ? "Account uumaa jira..." : "Seenaa jira...";
-
-    try {
-      if (nmGateMode === "signup") {
-        const { data, error } = await sb.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName || email.split("@")[0] } }
-        });
-        if (error) {
-          statusEl.textContent = "Dogoggora: " + error.message;
-          return;
-        }
-        if (data && data.user) {
-          await sb.from("profiles").upsert({
-            id: data.user.id,
-            email: email,
-            full_name: fullName || email.split("@")[0]
-          }).catch(() => {});
-        }
-        if (data && data.session) {
-          await nmCheckGateSession();
+      function syncAuthUI() {
+        const gate = document.getElementById("nm-auth-gate");
+        if (currentUser) {
+          if (gate) gate.classList.add("hidden");
+          document.body.style.overflow = "";
+          document.getElementById("feed-user-tag").textContent = currentUser.email || "User";
+          document.getElementById("profile-email").textContent = currentUser.email || "";
+          document.getElementById("profile-name").textContent =
+            (currentUser.user_metadata && currentUser.user_metadata.full_name) ||
+            (currentUser.email ? currentUser.email.split("@")[0] : "User");
         } else {
-          statusEl.textContent = "Account uumameera! Amma 'Seeni (Login)' tuqii seeni.";
-          nmGateSetMode("login");
+          if (gate) gate.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
         }
-      } else {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) {
-          statusEl.textContent = "Seenuu dide: " + error.message;
-          return;
-        }
-        await nmCheckGateSession();
       }
-    } catch (err) {
-      statusEl.textContent = "Rakkoon uumame: " + (err.message || err);
-    }
-  };
 
-  window.nmOpenPeopleDir = async function () {
-    const modal = document.getElementById("nm-people-dir-modal");
-    const listEl = document.getElementById("nm-people-dir-list");
-    if (modal) modal.classList.remove("hidden");
-    listEl.innerHTML = "Fayyadamtoota fe'aa jira...";
+      window.submitGateAuth = async function (e) {
+        e.preventDefault();
+        const msgEl = document.getElementById("gate-msg");
+        const email = document.getElementById("gate-email").value.trim();
+        const password = document.getElementById("gate-password").value;
+        const fullName = (document.getElementById("gate-name").value || "").trim();
 
-    const sb = nmGetSb();
-    if (!sb) {
-      listEl.innerHTML = "Supabase hin argamne.";
-      return;
-    }
-
-    const { data: users, error } = await sb.from("profiles").select("*").limit(100);
-    if (error || !users || !users.length) {
-      listEl.innerHTML = "Fayyadamtoonni galmaa'an hin argamne ykn table 'profiles' hin jiru.";
-      return;
-    }
-
-    const myId = nmCurrentUser ? nmCurrentUser.id : "";
-    const follows = JSON.parse(localStorage.getItem("nm_local_follows") || "{}");
-    const friends = JSON.parse(localStorage.getItem("nm_local_friends") || "{}");
-
-    listEl.innerHTML = users
-      .filter((u) => u.id !== myId)
-      .map((u) => {
-        const name = u.full_name || u.username || u.email || "User";
-        const isFol = !!follows[u.id];
-        const isFr = !!friends[u.id];
-        return (
-          '<div class="nm-user-row">' +
-          '<div><strong>' + nmEsc(name) + '</strong><div class="muted" style="font-size:12px;">' + nmEsc(u.email || "") + "</div></div>" +
-          '<div style="display:flex;gap:6px;">' +
-          '<button type="button" class="btn btn-sm ' + (isFol ? "btn-primary" : "btn-outline") + '" onclick="nmToggleFollowUser(\'' + nmEsc(u.id) + '\', this)">' +
-          (isFol ? "✓ Following" : "+ Follow") + "</button>" +
-          '<button type="button" class="btn btn-sm ' + (isFr ? "btn-primary" : "btn-outline") + '" onclick="nmToggleFriendUser(\'' + nmEsc(u.id) + '\', this)">' +
-          (isFr ? "🤝 Friend" : "+ Add Friend") + "</button>" +
-          "</div></div>"
-        );
-      })
-      .join("") || "Fayyadamtoonni biroo hin jiran.";
-  };
-
-  window.nmClosePeopleDir = function () {
-    const modal = document.getElementById("nm-people-dir-modal");
-    if (modal) modal.classList.add("hidden");
-  };
-
-  window.nmToggleFollowUser = async function (targetId, btn) {
-    const sb = nmGetSb();
-    const myId = nmCurrentUser ? nmCurrentUser.id : "";
-    const follows = JSON.parse(localStorage.getItem("nm_local_follows") || "{}");
-    const nextState = !follows[targetId];
-    follows[targetId] = nextState;
-    localStorage.setItem("nm_local_follows", JSON.stringify(follows));
-
-    if (btn) {
-      btn.textContent = nextState ? "✓ Following" : "+ Follow";
-      btn.className = nextState ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline";
-    }
-    if (sb && myId) {
-      if (nextState) {
-        await sb.from("follows").upsert({ follower_id: myId, following_id: targetId }).catch(() => {});
-      } else {
-        await sb.from("follows").delete().match({ follower_id: myId, following_id: targetId }).catch(() => {});
-      }
-    }
-  };
-
-  window.nmToggleFriendUser = async function (targetId, btn) {
-    const sb = nmGetSb();
-    const myId = nmCurrentUser ? nmCurrentUser.id : "";
-    const friends = JSON.parse(localStorage.getItem("nm_local_friends") || "{}");
-    const nextState = !friends[targetId];
-    friends[targetId] = nextState;
-    localStorage.setItem("nm_local_friends", JSON.stringify(friends));
-
-    if (btn) {
-      btn.textContent = nextState ? "🤝 Friend" : "+ Add Friend";
-      btn.className = nextState ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline";
-    }
-    if (sb && myId) {
-      if (nextState) {
-        await sb.from("friend_requests").upsert({ sender_id: myId, receiver_id: targetId, status: "accepted" }).catch(() => {});
-      } else {
-        await sb.from("friend_requests").delete().match({ sender_id: myId, receiver_id: targetId }).catch(() => {});
-      }
-    }
-  };
-
-  function nmDecorateUserPosts() {
-    if (!nmCurrentUser) return;
-    const myId = nmCurrentUser.id;
-    const myEmail = (nmCurrentUser.email || "").toLowerCase();
-
-    document.querySelectorAll("[data-post-id], .post-card, .feed-item, article").forEach((card) => {
-      if (card.dataset.nmPostActionsAdded === "1") return;
-      const postId = card.dataset.postId || card.getAttribute("data-id") || "";
-      const authorId = card.dataset.userId || card.getAttribute("data-author-id") || "";
-      const cardText = (card.textContent || "").toLowerCase();
-
-      const isMine =
-        (authorId && authorId === myId) ||
-        (myEmail && cardText.includes(myEmail));
-
-      if (!isMine && !postId) return;
-      if (authorId && authorId !== myId) return;
-
-      card.dataset.nmPostActionsAdded = "1";
-      const bar = document.createElement("div");
-      bar.className = "nm-post-owner-actions";
-      bar.innerHTML =
-        '<button type="button" class="btn btn-outline btn-sm" data-nm-edit="1">✏️ Edit (Sirreessi)</button>' +
-        '<button type="button" class="btn btn-outline btn-sm" data-nm-del="1">🗑️ Delete (Haqi)</button>';
-
-      bar.querySelector("[data-nm-edit]").onclick = function () {
-        nmOpenEditPostModal(postId, card);
-      };
-      bar.querySelector("[data-nm-del]").onclick = function () {
-        nmDeleteUserPost(postId, card);
-      };
-
-      card.appendChild(bar);
-    });
-  }
-
-  window.nmOpenEditPostModal = function (postId, cardEl) {
-    nmEditingCardEl = cardEl;
-    document.getElementById("nm-edit-post-id").value = postId || "";
-    const bodyEl = cardEl.querySelector(".post-body, .post-content, p") || cardEl;
-    document.getElementById("nm-edit-post-textarea").value = (bodyEl.textContent || "").trim();
-    document.getElementById("nm-edit-post-modal").classList.remove("hidden");
-  };
-
-  window.nmCloseEditPostModal = function () {
-    document.getElementById("nm-edit-post-modal").classList.add("hidden");
-    nmEditingCardEl = null;
-  };
-
-  window.nmSaveEditedPost = async function () {
-    const postId = document.getElementById("nm-edit-post-id").value;
-    const newText = document.getElementById("nm-edit-post-textarea").value.trim();
-    if (!newText) return;
-
-    const sb = nmGetSb();
-    if (sb && postId && nmCurrentUser) {
-      await sb
-        .from("posts")
-        .update({ content: newText, body: newText })
-        .eq("id", postId)
-        .eq("user_id", nmCurrentUser.id)
-        .catch(() => {});
-    }
-
-    if (nmEditingCardEl) {
-      const bodyEl = nmEditingCardEl.querySelector(".post-body, .post-content, p");
-      if (bodyEl) bodyEl.textContent = newText;
-    }
-    nmCloseEditPostModal();
-    if (typeof showToast === "function") showToast("Maxxansi kee sirreeffameera!");
-  };
-
-  window.nmDeleteUserPost = async function (postId, cardEl) {
-    if (!confirm("Maxxansa kana dhuguma haquu barbaaddaa?")) return;
-    const sb = nmGetSb();
-    if (sb && postId && nmCurrentUser) {
-      await sb
-        .from("posts")
-        .delete()
-        .eq("id", postId)
-        .eq("user_id", nmCurrentUser.id)
-        .catch(() => {});
-    }
-    if (cardEl) cardEl.remove();
-    if (typeof showToast === "function") showToast("Maxxansi haqameera!");
-  };
-
-  function nmEnsurePwaHeadAndSw() {
-    if (!document.querySelector('link[rel="manifest"]')) {
-      const link = document.createElement("link");
-      link.rel = "manifest";
-      link.href = "./manifest.json";
-      document.head.appendChild(link);
-    }
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js").catch(function () {});
-      });
-    }
-  }
-
-  function nmInjectDirButton() {
-    if (document.getElementById("nm-dir-topbar-btn")) return;
-    const topbar = document.querySelector(".topbar");
-    if (!topbar) return;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "nm-dir-topbar-btn";
-    btn.className = "btn btn-sm btn-outline";
-    btn.textContent = "👥 People / Friends";
-    btn.onclick = nmOpenPeopleDir;
-    topbar.appendChild(btn);
-  }
-
-  nmEnsurePwaHeadAndSw();
-  window.addEventListener("DOMContentLoaded", function () {
-    nmGetSb();
-    nmInjectDirButton();
-    nmCheckGateSession();
-    setInterval(nmDecorateUserPosts, 1500);
-
-    const sb = nmGetSb();
-    if (sb && sb.auth && typeof sb.auth.onAuthStateChange === "function") {
-      sb.auth.onAuthStateChange(function () {
-        nmCheckGateSession();
-      });
-    }
-  });
-})();
-</script><!-- ==========================================================
-     NESRU MICHAEL SIGN-IN FIX (APPEND BEFORE </body>)
-     ========================================================== -->
-<script>
-(function () {
-  const NM_FIXED_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
-  // Yoo barbaadde Anon Key kee asitti galchi:
-  const NM_FIXED_KEY = "";
-
-  function nmEnsureSupabaseSdk(cb) {
-    if (window.supabase && typeof window.supabase.createClient === "function") {
-      cb();
-      return;
-    }
-    const existing = document.querySelector('script[src*="supabase-js"]');
-    if (existing) {
-      existing.addEventListener("load", cb, { once: true });
-      setTimeout(cb, 800);
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-    s.async = true;
-    s.onload = cb;
-    s.onerror = cb;
-    document.head.appendChild(s);
-  }
-
-  function nmResolveKey() {
-    const inp = document.querySelector(
-      'input[id*="anon" i], input[id*="key" i], input[placeholder*="anon" i], input[placeholder*="key" i]'
-    );
-    const k =
-      (NM_FIXED_KEY && NM_FIXED_KEY.trim()) ||
-      (inp && inp.value ? inp.value.trim() : "") ||
-      localStorage.getItem("supabase_anon_key") ||
-      localStorage.getItem("nm_sb_key") ||
-      localStorage.getItem("sb_anon_key") ||
-      "";
-    if (k) {
-      localStorage.setItem("supabase_anon_key", k);
-      localStorage.setItem("nm_sb_key", k);
-    }
-    return k;
-  }
-
-  function nmGetWorkingClient() {
-    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
-    if (window.sb && window.sb.auth) return window.sb;
-    if (window._supabase && window._supabase.auth) return window._supabase;
-
-    const key = nmResolveKey();
-    if (window.supabase && typeof window.supabase.createClient === "function" && key) {
-      const client = window.supabase.createClient(NM_FIXED_URL, key);
-      window.supabaseClient = client;
-      window.sb = client;
-      return client;
-    }
-    return null;
-  }
-
-  function nmHideGateNow() {
-    const gate = document.getElementById("nm-auth-gate-screen");
-    if (gate) {
-      gate.classList.add("hidden");
-      gate.style.setProperty("display", "none", "important");
-    }
-    document.documentElement.style.overflow = "";
-    document.body.style.overflow = "";
-  }
-
-  function nmShowGateNow() {
-    const gate = document.getElementById("nm-auth-gate-screen");
-    if (gate) {
-      gate.classList.remove("hidden");
-      gate.style.setProperty("display", "flex", "important");
-    }
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-  }
-
-  window.nmGateSubmitAuth = async function () {
-    const statusEl = document.getElementById("nm-gate-status");
-    const btn = document.getElementById("nm-gate-submit-btn");
-    const emailEl = document.getElementById("nm-gate-email");
-    const passEl = document.getElementById("nm-gate-password");
-    const nameEl = document.getElementById("nm-gate-fullname");
-
-    const email = emailEl ? emailEl.value.trim() : "";
-    const password = passEl ? passEl.value : "";
-    const fullName = nameEl ? nameEl.value.trim() : "";
-    const mode = (btn && /uumi/i.test(btn.textContent || "")) ? "signup" : "login";
-
-    if (!email || !password) {
-      if (statusEl) statusEl.textContent = "Maaloo Email fi Password guuti.";
-      return;
-    }
-
-    if (statusEl) statusEl.textContent = mode === "signup" ? "Account uumaa jira..." : "Seenaa jira...";
-    if (btn) btn.disabled = true;
-
-    nmEnsureSupabaseSdk(async function () {
-      try {
-        const sb = nmGetWorkingClient();
         if (!sb || !sb.auth) {
-          if (statusEl) {
-            statusEl.textContent =
-              "Anon Key hin argamne. NM_FIXED_KEY keessa ykn sanduuqa Supabase key keessa galchi.";
-          }
-          if (btn) btn.disabled = false;
+          msgEl.textContent = "Anon Key sirrii hin galle. SUPABASE_ANON_KEY keessa galchi.";
           return;
         }
 
-        if (mode === "signup") {
-          const { data, error } = await sb.auth.signUp({
-            email: email,
-            password: password,
-            options: { data: { full_name: fullName || email.split("@")[0] } }
-          });
-          if (error) {
-            if (statusEl) statusEl.textContent = "Dogoggora Sign Up: " + error.message;
-            if (btn) btn.disabled = false;
-            return;
-          }
-          if (data && data.user) {
-            await sb
-              .from("profiles")
-              .upsert({
-                id: data.user.id,
-                email: email,
-                full_name: fullName || email.split("@")[0]
-              })
-              .catch(function () {});
-          }
-          if (data && data.session) {
-            if (statusEl) statusEl.textContent = "Galmaa'uun milkaa'eera! Seenaa jira...";
-            nmHideGateNow();
-          } else {
-            if (statusEl) {
-              statusEl.textContent =
-                "Account uumameera! Yoo email confirmation hin barbaachifne 'Seeni (Login)' tuqii seeni.";
-            }
-          }
-        } else {
-          const { data, error } = await sb.auth.signInWithPassword({
-            email: email,
-            password: password
-          });
-          if (error) {
-            if (statusEl) statusEl.textContent = "Dogoggora Sign In: " + error.message;
-            if (btn) btn.disabled = false;
-            return;
-          }
-          if (data && data.user) {
-            if (statusEl) statusEl.textContent = "Milkaa'inaan seentaniirtu!";
-            nmHideGateNow();
-          } else {
-            if (statusEl) statusEl.textContent = "Session hin uumamne. Email/Password irra deebi'ii ilaali.";
-          }
-        }
-      } catch (e) {
-        if (statusEl) statusEl.textContent = "Rakkoon uumame: " + (e && e.message ? e.message : e);
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-  };
+        msgEl.textContent = gateMode === "signup" ? "Account uumaa jira..." : "Seenaa jira...";
 
-  nmEnsureSupabaseSdk(async function () {
-    const sb = nmGetWorkingClient();
-    if (!sb || !sb.auth) return;
-    try {
-      const { data } = await sb.auth.getSession();
-      if (data && data.session && data.session.user) {
-        nmHideGateNow();
-      } else {
-        nmShowGateNow();
-      }
-      sb.auth.onAuthStateChange(function (_event, session) {
-        if (session && session.user) {
-          nmHideGateNow();
-        } else {
-          nmShowGateNow();
+        try {
+          if (gateMode === "signup") {
+            const { data, error } = await sb.auth.signUp({
+              email,
+              password,
+              options: { data: { full_name: fullName || email.split("@")[0] } }
+            });
+            if (error) {
+              msgEl.textContent = "Dogoggora Sign Up: " + error.message;
+              return;
+            }
+            if (data && data.session && data.session.user) {
+              currentUser = data.session.user;
+              syncAuthUI();
+              await loadPosts();
+              await loadPeople();
+              showToast("Account uumameera, seentaniirtu!");
+            } else {
+              msgEl.textContent = "Account uumameera! Amma 'Seeni (Login)' filadhuutii seeni.";
+              setGateMode("login");
+            }
+          } else {
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) {
+              msgEl.textContent = "Dogoggora Sign In: " + error.message;
+              return;
+            }
+            currentUser = data && data.user ? data.user : null;
+            syncAuthUI();
+            await loadPosts();
+            await loadPeople();
+            showToast("Milkaa'inaan seentaniirtu!");
+          }
+        } catch (err) {
+          msgEl.textContent = "Rakkoon uumame: " + (err.message || err);
+        }
+      };
+
+      window.handleLogout = async function () {
+        if (sb && sb.auth) {
+          await sb.auth.signOut();
+        }
+        currentUser = null;
+        syncAuthUI();
+        showToast("Ba'aniirtu (Logged out).");
+      };
+
+      window.navigateTo = function (viewId) {
+        document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+        const target = document.getElementById(viewId);
+        if (target) target.classList.add("active");
+        document.querySelectorAll(".nav-item").forEach((b) => {
+          b.classList.toggle("active", b.dataset.target === viewId);
+        });
+        if (viewId === "view-people") loadPeople();
+      };
+
+      window.setFeedFilter = function (f) {
+        feedFilter = f;
+        document.getElementById("filter-all").classList.toggle("active", f === "all");
+        document.getElementById("filter-following").classList.toggle("active", f === "following");
+        loadPosts();
+      };
+
+      window.handleCreatePost = async function (e) {
+        e.preventDefault();
+        if (!currentUser || !sb) return;
+        const title = document.getElementById("post-title").value.trim();
+        const body = document.getElementById("post-body").value.trim();
+        const imageUrl = document.getElementById("post-image").value.trim();
+        if (!title || !body) return;
+
+        const { error } = await sb.from("posts").insert({
+          user_id: currentUser.id,
+          author_email: currentUser.email,
+          title,
+          body,
+          image_url: imageUrl || null
+        });
+        if (error) {
+          showToast("Maxxansuu dide: " + error.message);
+          return;
+        }
+        document.getElementById("post-form").reset();
+        showToast("Maxxansi kee maxxanfameera!");
+        await loadPosts();
+      };
+
+      window.loadPosts = async function () {
+        const list = document.getElementById("posts-list");
+        if (!sb || !list) return;
+
+        const { data: posts, error } = await sb
+          .from("posts")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (error) {
+          list.innerHTML = '<div class="card muted">Posts fe\'uu hin dandeenye: ' + error.message + "</div>";
+          return;
+        }
+
+        const rows = posts || [];
+        document.getElementById("stat-posts").textContent = String(
+          currentUser ? rows.filter((p) => p.user_id === currentUser.id).length : 0
+        );
+
+        if (!rows.length) {
+          list.innerHTML = '<div class="card muted">Maxxansi hin jiru. Kan jalqabaa maxxansi!</div>';
+          return;
+        }
+
+        list.innerHTML = rows
+          .map((p) => {
+            const isMine = currentUser && p.user_id === currentUser.id;
+            return `
+              <article class="post-card" data-post-id="${p.id}">
+                <div class="post-header">
+                  <div class="post-author-info">
+                    <div class="avatar-sm">${(p.author_email || "U").slice(0, 2).toUpperCase()}</div>
+                    <div>
+                      <strong>${p.author_email || "User"}</strong>
+                      <div class="status-sub">${p.created_at ? new Date(p.created_at).toLocaleString() : ""}</div>
+                    </div>
+                  </div>
+                  ${
+                    isMine
+                      ? `<div style="display:flex;gap:6px;">
+                          <button type="button" class="btn btn-outline btn-sm" onclick="openEditPostModal('${p.id}')">✏️ Edit</button>
+                          <button type="button" class="btn btn-danger btn-sm" onclick="deletePostById('${p.id}')">🗑️ Delete</button>
+                        </div>`
+                      : ""
+                  }
+                </div>
+                <div class="post-title">${p.title || ""}</div>
+                <div class="post-body">${p.body || ""}</div>
+                ${p.image_url ? `<img class="post-img" src="${p.image_url}" alt="Post image" />` : ""}
+              </article>
+            `;
+          })
+          .join("");
+      };
+
+      window.openEditPostModal = async function (postId) {
+        if (!sb) return;
+        const { data } = await sb.from("posts").select("*").eq("id", postId).single();
+        if (!data) return;
+        document.getElementById("edit-post-id").value = data.id;
+        document.getElementById("edit-post-title").value = data.title || "";
+        document.getElementById("edit-post-body").value = data.body || "";
+        document.getElementById("edit-post-modal").classList.remove("hidden");
+      };
+
+      window.closeEditPostModal = function () {
+        document.getElementById("edit-post-modal").classList.add("hidden");
+      };
+
+      window.savePostEdit = async function (e) {
+        e.preventDefault();
+        if (!sb || !currentUser) return;
+        const postId = document.getElementById("edit-post-id").value;
+        const title = document.getElementById("edit-post-title").value.trim();
+        const body = document.getElementById("edit-post-body").value.trim();
+        const { error } = await sb
+          .from("posts")
+          .update({ title, body })
+          .eq("id", postId)
+          .eq("user_id", currentUser.id);
+        if (error) {
+          showToast("Sirreessuu dide: " + error.message);
+          return;
+        }
+        closeEditPostModal();
+        showToast("Maxxansi sirreeffameera!");
+        await loadPosts();
+      };
+
+      window.deletePostById = async function (postId) {
+        if (!sb || !currentUser) return;
+        if (!confirm("Maxxansa kana haquu barbaaddaa?")) return;
+        const { error } = await sb.from("posts").delete().eq("id", postId).eq("user_id", currentUser.id);
+        if (error) {
+          showToast("Haquu dide: " + error.message);
+          return;
+        }
+        showToast("Maxxansi haqameera!");
+        await loadPosts();
+      };
+
+      window.loadPeople = async function () {
+        const list = document.getElementById("people-list");
+        if (!sb || !list) return;
+        const q = (document.getElementById("people-search").value || "").trim().toLowerCase();
+        const { data: profiles, error } = await sb.from("profiles").select("*").limit(100);
+        if (error) {
+          list.innerHTML = '<div class="card muted">Profiles fe\'uu hin dandeenye: ' + error.message + "</div>";
+          return;
+        }
+        const rows = (profiles || []).filter((u) => {
+          if (currentUser && u.id === currentUser.id) return false;
+          if (!q) return true;
+          return ((u.full_name || "") + " " + (u.email || "")).toLowerCase().includes(q);
+        });
+        if (!rows.length) {
+          list.innerHTML = '<div class="card muted">Fayyadamtoonni biroo hin argamne.</div>';
+          return;
+        }
+        list.innerHTML = rows
+          .map(
+            (u) => `
+            <div class="person-card">
+              <div>
+                <strong>${u.full_name || u.email || "User"}</strong>
+                <div class="muted">${u.email || ""}</div>
+              </div>
+              <div class="person-actions">
+                <button type="button" class="btn btn-sm btn-outline" onclick="showToast('Follow godhameera')">+ Follow</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="showToast('Gaaffiin hiriyummaa ergameera')">+ Add Friend</button>
+              </div>
+            </div>
+          `
+          )
+          .join("");
+      };
+
+      window.openInfoModal = function (type) {
+        const titleEl = document.getElementById("info-modal-title");
+        const bodyEl = document.getElementById("info-modal-body");
+        const bio =
+          "Nesru michael Barataa waggaa sadaffaa Sagantaa Barnoota Educational planning and managemant Oda Bultum University";
+        const map = {
+          about: ["ℹ️ About Nesru Michael", `<p>${bio}</p>`],
+          settings: ["⚙️ Settings", "<p>Qindaa'ina appii Nesru Michael.</p>"],
+          privacy: ["🔒 Privacy Policy", "<p>Daataa fayyadamtootaa nageenyaan eeggama.</p>"],
+          terms: ["📄 Terms", "<p>Seera itti fayyadama platform Nesru Michael.</p>"],
+          transparency: ["🔍 Transparency", "<p>Ifxoomina tajaajila fi itti fayyadama daataa.</p>"],
+          contact: ["✉️ Contact", "<p>Email: nesrumichael@gmail.com</p>"],
+          support: ["🎧 Support", "<p>Deeggarsaaf nesrumichael@gmail.com qunnamaa.</p>"]
+        };
+        const item = map[type] || map.about;
+        titleEl.textContent = item[0];
+        bodyEl.innerHTML = item[1];
+        document.getElementById("info-modal").classList.remove("hidden");
+      };
+
+      window.closeInfoModal = function () {
+        document.getElementById("info-modal").classList.add("hidden");
+      };
+
+      window.addEventListener("DOMContentLoaded", async function () {
+        initSupabase();
+        if (sb && sb.auth) {
+          const { data } = await sb.auth.getSession();
+          currentUser = data && data.session ? data.session.user : null;
+          sb.auth.onAuthStateChange(async (_event, session) => {
+            currentUser = session ? session.user : null;
+            syncAuthUI();
+            if (currentUser) {
+              await loadPosts();
+              await loadPeople();
+            }
+          });
+        }
+        syncAuthUI();
+        if (currentUser) {
+          await loadPosts();
+          await loadPeople();
         }
       });
-    } catch (e) {}
-  });
-})();
-    </script>
+    })();
+  </script>
 </body>
-          </html>
+  </html>
