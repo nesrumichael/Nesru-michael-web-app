@@ -3763,6 +3763,700 @@
     }, 1500);
   });
 })();
+</script><!-- ==========================================================
+     NESRU MICHAEL SOCIAL EXPANSION: PROFILE PHOTO CHANGE,
+     BROWSE USERS & THEIR POSTS, GROUP/CHANNEL MEMBERS & ALL POSTS
+     APPEND BEFORE </body> (DOES NOT DELETE EXISTING CODE)
+     ========================================================== -->
+<style id="nm-social-expand-style">
+  #nm-social-expand-box {
+    margin-top: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 14px;
+    background: #ffffff;
+    color: #0f172a;
+  }
+  body.dark-mode #nm-social-expand-box {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+  .nm-exp-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .nm-exp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .nm-exp-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+  body.dark-mode .nm-exp-card {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+  .nm-exp-avatar-lg {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #2563eb;
+    background: #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 20px;
+    color: #0f172a;
+    flex-shrink: 0;
+  }
+  .nm-exp-avatar-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #94a3b8;
+    background: #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: #0f172a;
+    flex-shrink: 0;
+  }
+  .nm-exp-member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #0f172a;
+    font-size: 12px;
+    margin: 3px;
+  }
+  body.dark-mode .nm-exp-member-chip {
+    background: #1e293b;
+    color: #f8fafc;
+  }
+</style>
+
+<script>
+(function () {
+  const LS_PROFILES = "nm_public_profiles_v1";
+  const LS_POSTS = "nesru_restored_posts_v1";
+  const LS_COMMUNITIES = "nm_channels_groups_v1";
+
+  let activeExpandTab = "allfeed";
+  let inspectedUserEmail = "";
+  let activeCommunityViewId = "";
+
+  function esc(v) {
+    return String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function readJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {}
+  }
+
+  function toast(msg) {
+    if (typeof window.showToast === "function") {
+      window.showToast(msg);
+      return;
+    }
+    const el = document.getElementById("toast");
+    if (el) {
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 2200);
+    }
+  }
+
+  function getCurrentUser() {
+    try {
+      const u = JSON.parse(localStorage.getItem("nm_persisted_auth_user_v1") || "null");
+      if (u && u.email) {
+        return {
+          email: u.email.toLowerCase(),
+          name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0]
+        };
+      }
+    } catch (e) {}
+    return { email: "nesrumichael@gmail.com", name: "Nesru Michael" };
+  }
+
+  function getProfiles() {
+    const me = getCurrentUser();
+    const defaults = [
+      {
+        email: "nesrumichael@gmail.com",
+        name: "Nesru Michael",
+        bio: "Educational planning and management student & social web creator.",
+        avatar: "",
+        isPublic: true
+      },
+      {
+        email: "rammis910@gmail.com",
+        name: "Rammis Nas",
+        bio: "Web & PWA builder.",
+        avatar: "",
+        isPublic: true
+      }
+    ];
+    const list = readJson(LS_PROFILES, defaults);
+    if (!list.some((p) => (p.email || "").toLowerCase() === me.email)) {
+      list.unshift({
+        email: me.email,
+        name: me.name,
+        bio: "Public user profile.",
+        avatar: "",
+        isPublic: true
+      });
+      writeJson(LS_PROFILES, list);
+    }
+    return list;
+  }
+
+  function getPosts() {
+    const list = readJson(LS_POSTS, null);
+    if (Array.isArray(list) && list.length) return list;
+    const seed = [
+      {
+        id: "post-seed-1",
+        author: "Nesru Michael",
+        author_email: "nesrumichael@gmail.com",
+        title: "Hundaa Waliin Qooduu",
+        body: "Post namoota biroo, group, channel, fi public profile asirratti arguu dandeessu.",
+        image_url: "",
+        created_at: new Date().toISOString(),
+        likes: [],
+        comments: [],
+        shares: 0
+      },
+      {
+        id: "post-seed-2",
+        author: "Rammis Nas",
+        author_email: "rammis910@gmail.com",
+        title: "Marii Hawaasaa & Channel",
+        body: "Suuraa profile kee jijjiiradhuutii namoota biroo waliin wal-qunnamtii eegali.",
+        image_url: "",
+        created_at: new Date().toISOString(),
+        likes: [],
+        comments: [],
+        shares: 0
+      }
+    ];
+    writeJson(LS_POSTS, seed);
+    return seed;
+  }
+
+  function getCommunities() {
+    const me = getCurrentUser();
+    const defaults = [
+      {
+        id: "ch-main",
+        type: "channel",
+        name: "Nesru Community Channel",
+        description: "Beeksisaafi odeeffannoo waliinii.",
+        owner: me.email,
+        members: ["nesrumichael@gmail.com", "rammis910@gmail.com", me.email],
+        posts: [
+          {
+            id: "cp-seed-1",
+            author: "Nesru Michael",
+            text: "Baga gara Channel kanaa dhuftan!",
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          }
+        ]
+      },
+      {
+        id: "grp-main",
+        type: "group",
+        name: "Builders & Friends Group",
+        description: "Group namoota hundaa kan wal-arguufi wal-gargaaru.",
+        owner: me.email,
+        members: ["nesrumichael@gmail.com", "rammis910@gmail.com", me.email],
+        posts: [
+          {
+            id: "gp-seed-1",
+            author: "Rammis Nas",
+            text: "Miseensonni group kanaa asirratti wal arguu fi mari'achuu danda'u.",
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          }
+        ]
+      }
+    ];
+    const comms = readJson(LS_COMMUNITIES, defaults);
+    comms.forEach((c) => {
+      c.members = Array.isArray(c.members) ? c.members : [];
+      if (!c.members.includes(me.email)) c.members.push(me.email);
+    });
+    writeJson(LS_COMMUNITIES, comms);
+    return comms;
+  }
+
+  function avatarHtml(profileOrName, sizeClass) {
+    const cls = sizeClass === "lg" ? "nm-exp-avatar-lg" : "nm-exp-avatar-sm";
+    const avatarUrl = typeof profileOrName === "object" && profileOrName ? profileOrName.avatar : "";
+    const label =
+      typeof profileOrName === "object" && profileOrName
+        ? (profileOrName.name || profileOrName.email || "U").slice(0, 2).toUpperCase()
+        : String(profileOrName || "U").slice(0, 2).toUpperCase();
+
+    if (avatarUrl) {
+      return `<img src="${esc(avatarUrl)}" alt="Avatar" class="${cls}" />`;
+    }
+    return `<span class="${cls}">${esc(label)}</span>`;
+  }
+
+  function ensureExpandBox() {
+    if (document.getElementById("nm-social-expand-box")) return;
+    const host =
+      document.getElementById("nm-fb-center-slot") ||
+      document.querySelector("main.container") ||
+      document.body;
+
+    const box = document.createElement("section");
+    box.id = "nm-social-expand-box";
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <strong>🌟 Public Feed, Profiles & Communities Hub</strong>
+        <span class="muted" id="nm-exp-user-badge"></span>
+      </div>
+
+      <div class="nm-exp-tabs">
+        <button type="button" class="btn btn-sm btn-primary" data-exp-tab="allfeed" onclick="nmSwitchExpandTab('allfeed')">📰 Post Namoota Hundaa</button>
+        <button type="button" class="btn btn-sm btn-outline" data-exp-tab="directory" onclick="nmSwitchExpandTab('directory')">👥 Namoota & Public Profiles</button>
+        <button type="button" class="btn btn-sm btn-outline" data-exp-tab="myphoto" onclick="nmSwitchExpandTab('myphoto')">🖼️ Profile Photo & Info Jijjiiri</button>
+        <button type="button" class="btn btn-sm btn-outline" data-exp-tab="groups" onclick="nmSwitchExpandTab('groups')">👥 Groups & Channels (Members)</button>
+      </div>
+
+      <div id="nm-exp-content"></div>
+    `;
+    host.appendChild(box);
+  }
+
+  window.nmSwitchExpandTab = function (tab) {
+    activeExpandTab = tab;
+    document.querySelectorAll("[data-exp-tab]").forEach((b) => {
+      const act = b.dataset.expTab === tab;
+      b.classList.toggle("btn-primary", act);
+      b.classList.toggle("btn-outline", !act);
+    });
+    renderExpandContent();
+  };
+
+  window.nmHandleAvatarFileChange = function (input) {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 1500000) {
+      toast("Suuraan 1.5MB gadi haa ta'u.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function () {
+      const dataUrl = String(reader.result || "");
+      const urlInp = document.getElementById("nm-exp-avatar-url");
+      if (urlInp) urlInp.value = dataUrl;
+      const prev = document.getElementById("nm-exp-avatar-preview");
+      if (prev) prev.innerHTML = `<img src="${esc(dataUrl)}" alt="Preview" class="nm-exp-avatar-lg" />`;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.nmSaveProfileWithPhoto = function (e) {
+    if (e) e.preventDefault();
+    const me = getCurrentUser();
+    const name = (document.getElementById("nm-exp-name")?.value || me.name).trim();
+    const bio = (document.getElementById("nm-exp-bio")?.value || "").trim();
+    const avatar = (document.getElementById("nm-exp-avatar-url")?.value || "").trim();
+    const isPublic = Boolean(document.getElementById("nm-exp-public")?.checked);
+
+    const list = getProfiles();
+    const idx = list.findIndex((p) => (p.email || "").toLowerCase() === me.email);
+    const item = {
+      email: me.email,
+      name: name || me.name,
+      bio,
+      avatar,
+      isPublic
+    };
+    if (idx >= 0) list[idx] = item;
+    else list.unshift(item);
+    writeJson(LS_PROFILES, list);
+
+    const pName = document.getElementById("profile-name");
+    if (pName) pName.textContent = item.name;
+    const pAvatar = document.getElementById("profile-avatar");
+    if (pAvatar && avatar) pAvatar.src = avatar;
+
+    toast("Profile fi suuraan kee haaromfameera!");
+    renderExpandContent();
+  };
+
+  window.nmInspectUser = function (email) {
+    inspectedUserEmail = (email || "").toLowerCase();
+    window.nmSwitchExpandTab("directory");
+  };
+
+  window.nmLikeAllFeedPost = function (postId) {
+    const me = getCurrentUser().email;
+    const posts = getPosts();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.likes = Array.isArray(p.likes) ? p.likes : [];
+    const i = p.likes.indexOf(me);
+    if (i >= 0) p.likes.splice(i, 1);
+    else p.likes.push(me);
+    writeJson(LS_POSTS, posts);
+    renderExpandContent();
+  };
+
+  window.nmCommentAllFeedPost = function (e, postId) {
+    if (e) e.preventDefault();
+    const me = getCurrentUser();
+    const inp = document.getElementById("nm-allfeed-c-" + postId);
+    const txt = (inp?.value || "").trim();
+    if (!txt) return;
+    const posts = getPosts();
+    const p = posts.find((x) => String(x.id) === String(postId));
+    if (!p) return;
+    p.comments = Array.isArray(p.comments) ? p.comments : [];
+    p.comments.push({ author: me.name || me.email, text: txt });
+    writeJson(LS_POSTS, posts);
+    if (inp) inp.value = "";
+    renderExpandContent();
+  };
+
+  window.nmJoinCommunityHub = function (commId) {
+    const me = getCurrentUser().email;
+    const comms = getCommunities();
+    const c = comms.find((x) => String(x.id) === String(commId));
+    if (!c) return;
+    c.members = Array.isArray(c.members) ? c.members : [];
+    if (!c.members.includes(me)) {
+      c.members.push(me);
+      writeJson(LS_COMMUNITIES, comms);
+      toast("Keessatti makamtaniirtu!");
+      renderExpandContent();
+    }
+  };
+
+  window.nmPostInCommunityHub = function (e, commId) {
+    if (e) e.preventDefault();
+    const me = getCurrentUser();
+    const inp = document.getElementById("nm-hub-msg-" + commId);
+    const txt = (inp?.value || "").trim();
+    if (!txt) return;
+    const comms = getCommunities();
+    const c = comms.find((x) => String(x.id) === String(commId));
+    if (!c) return;
+    c.posts = Array.isArray(c.posts) ? c.posts : [];
+    c.posts.push({
+      author: me.name || me.email,
+      text: txt,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    });
+    writeJson(LS_COMMUNITIES, comms);
+    if (inp) inp.value = "";
+    renderExpandContent();
+  };
+
+  function renderExpandContent() {
+    const me = getCurrentUser();
+    const badge = document.getElementById("nm-exp-user-badge");
+    if (badge) badge.textContent = "Account: " + me.email;
+
+    const area = document.getElementById("nm-exp-content");
+    if (!area) return;
+
+    const profiles = getProfiles();
+    const posts = getPosts();
+    const comms = getCommunities();
+
+    const findProfileByEmail = (em) =>
+      profiles.find((p) => (p.email || "").toLowerCase() === (em || "").toLowerCase()) || {
+        name: em || "User",
+        email: em || "",
+        bio: "",
+        avatar: "",
+        isPublic: true
+      };
+
+    if (activeExpandTab === "allfeed") {
+      area.innerHTML = posts
+        .map((p) => {
+          const prof = findProfileByEmail(p.author_email || p.author);
+          const likes = Array.isArray(p.likes) ? p.likes : [];
+          const comments = Array.isArray(p.comments) ? p.comments : [];
+          return `
+            <article class="nm-exp-card" style="margin-bottom:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="nmInspectUser('${esc((p.author_email || "").toLowerCase())}')">
+                  ${avatarHtml(prof, "sm")}
+                  <div>
+                    <strong>${esc(prof.name || p.author || "User")}</strong>
+                    <div class="muted">${esc(p.author_email || "")}</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="nmInspectUser('${esc((p.author_email || "").toLowerCase())}')">👤 Profile Ilaali</button>
+              </div>
+              ${p.title ? `<div style="font-weight:700;margin-bottom:4px;">${esc(p.title)}</div>` : ""}
+              <div style="font-size:14px;margin-bottom:8px;">${esc(p.body || "")}</div>
+              ${p.image_url ? `<img src="${esc(p.image_url)}" alt="Post" style="max-width:100%;border-radius:8px;margin-bottom:8px;" />` : ""}
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="nmLikeAllFeedPost('${esc(p.id)}')">👍 Like (${likes.length})</button>
+              </div>
+              <div style="font-size:12px;margin-bottom:6px;">
+                ${comments.map((c) => `<div><strong>${esc(c.author)}:</strong> ${esc(c.text)}</div>`).join("")}
+              </div>
+              <form onsubmit="nmCommentAllFeedPost(event, '${esc(p.id)}')" style="display:flex;gap:6px;">
+                <input type="text" id="nm-allfeed-c-${esc(p.id)}" placeholder="Comment barreessi..." required />
+                <button type="submit" class="btn btn-primary btn-sm">Ergi</button>
+              </form>
+            </article>
+          `;
+        })
+        .join("");
+      return;
+    }
+
+    if (activeExpandTab === "directory") {
+      const publicList = profiles.filter((p) => p.isPublic !== false || (p.email || "").toLowerCase() === me.email);
+      const selected = inspectedUserEmail ? findProfileByEmail(inspectedUserEmail) : null;
+      const selectedPosts = selected
+        ? posts.filter(
+            (pt) => (pt.author_email || pt.author || "").toLowerCase() === (selected.email || "").toLowerCase()
+          )
+        : [];
+
+      area.innerHTML = `
+        <div class="nm-exp-grid">
+          ${publicList
+            .map((p) => {
+              const em = (p.email || "").toLowerCase();
+              return `
+                <div class="nm-exp-card">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                    ${avatarHtml(p, "lg")}
+                    <div>
+                      <strong>${esc(p.name || p.email)}</strong>
+                      <div class="muted">${esc(p.email)}</div>
+                      <span style="font-size:11px;color:#16a34a;font-weight:700;">● Public Profile</span>
+                    </div>
+                  </div>
+                  <div style="font-size:13px;margin-bottom:8px;">${esc(p.bio || "Bio hin jiru.")}</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="nmInspectUser('${esc(em)}')">⬇️ Wal Jala Gadi Ilaali</button>
+                    ${
+                      typeof window.nmStartPrivateChatWith === "function" && em !== me.email
+                        ? `<button type="button" class="btn btn-outline btn-sm" onclick="nmStartPrivateChatWith('${esc(em)}')">💬 Chat</button>`
+                        : ""
+                    }
+                  </div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        ${
+          selected
+            ? `
+            <div class="nm-exp-card" style="margin-top:12px;border-color:#2563eb;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  ${avatarHtml(selected, "lg")}
+                  <div>
+                    <strong>${esc(selected.name || selected.email)}</strong>
+                    <div class="muted">${esc(selected.email)}</div>
+                    <div style="font-size:13px;margin-top:3px;">${esc(selected.bio || "")}</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="inspectedUserEmail='';renderExpandContent();">✕ Cufi</button>
+              </div>
+              <hr style="margin:10px 0;border:0;border-top:1px solid rgba(148,163,184,0.3);" />
+              <strong>Maxxansoota ${esc(selected.name || selected.email)} (${selectedPosts.length})</strong>
+              <div style="margin-top:8px;">
+                ${
+                  selectedPosts.length
+                    ? selectedPosts
+                        .map(
+                          (pt) => `
+                        <div style="padding:8px;border-radius:8px;background:rgba(148,163,184,0.12);margin-bottom:6px;">
+                          ${pt.title ? `<div><strong>${esc(pt.title)}</strong></div>` : ""}
+                          <div>${esc(pt.body || "")}</div>
+                        </div>
+                      `
+                        )
+                        .join("")
+                    : `<div class="muted">Maxxansi hin jiru.</div>`
+                }
+              </div>
+            </div>
+          `
+            : ""
+        }
+      `;
+      return;
+    }
+
+    if (activeExpandTab === "myphoto") {
+      const mine = findProfileByEmail(me.email);
+      area.innerHTML = `
+        <form onsubmit="nmSaveProfileWithPhoto(event)" class="nm-exp-card">
+          <strong>🖼️ Suuraa Profile Kee & Odeeffannoo Public Jijjiiri</strong>
+          <div style="display:flex;align-items:center;gap:12px;margin:10px 0;">
+            <div id="nm-exp-avatar-preview">${avatarHtml(mine, "lg")}</div>
+            <div>
+              <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+                📁 Suuraa Filadhu (Device)
+                <input type="file" accept="image/*" style="display:none;" onchange="nmHandleAvatarFileChange(this)" />
+              </label>
+              <div class="muted" style="margin-top:4px;">Yookaan URL suuraa armaan gadiitti galchi.</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Image URL (Optional)</label>
+            <input type="text" id="nm-exp-avatar-url" value="${esc(mine.avatar || "")}" placeholder="https://..." />
+          </div>
+
+          <div class="form-group">
+            <label>Maqaa Kee</label>
+            <input type="text" id="nm-exp-name" value="${esc(mine.name || me.name)}" required />
+          </div>
+
+          <div class="form-group">
+            <label>Bio (Odeeffannoo Public)</label>
+            <input type="text" id="nm-exp-bio" value="${esc(mine.bio || "")}" placeholder="Waa'ee keetii barreessi..." />
+          </div>
+
+          <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:13px;">
+            <input type="checkbox" id="nm-exp-public" ${mine.isPublic !== false ? "checked" : ""} />
+            Profile koo namoota biroof ifa (Public) haa ta'u
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-sm">💾 Profile & Suuraa Ol-kaa'i</button>
+        </form>
+      `;
+      return;
+    }
+
+    if (activeExpandTab === "groups") {
+      if (!activeCommunityViewId && comms[0]) activeCommunityViewId = comms[0].id;
+      const currentComm = comms.find((c) => String(c.id) === String(activeCommunityViewId)) || comms[0];
+
+      area.innerHTML = `
+        <div class="nm-exp-grid" style="margin-bottom:10px;">
+          ${comms
+            .map((c) => {
+              const members = Array.isArray(c.members) ? c.members : [];
+              const joined = members.includes(me.email);
+              return `
+                <div class="nm-exp-card">
+                  <div style="font-size:11px;font-weight:700;color:#2563eb;">${c.type === "group" ? "👥 GROUP" : "📢 CHANNEL"}</div>
+                  <strong>${esc(c.name)}</strong>
+                  <div class="muted">${esc(c.description || "")}</div>
+                  <div class="muted" style="margin-top:4px;">Miseensota: ${members.length}</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="activeCommunityViewId='${esc(c.id)}';renderExpandContent();">Wal Argi & Banadhu</button>
+                    ${
+                      !joined
+                        ? `<button type="button" class="btn btn-success btn-sm" onclick="nmJoinCommunityHub('${esc(c.id)}')">+ Makami</button>`
+                        : ""
+                    }
+                  </div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        ${
+          currentComm
+            ? `
+            <div class="nm-exp-card">
+              <strong>${currentComm.type === "group" ? "👥 Group:" : "📢 Channel:"} ${esc(currentComm.name)}</strong>
+              <div class="muted" style="margin-bottom:8px;">${esc(currentComm.description || "")}</div>
+
+              <div style="margin-bottom:10px;">
+                <strong style="font-size:12px;">Miseensota Keessa Jiran (Wal Argi):</strong>
+                <div style="margin-top:4px;">
+                  ${(currentComm.members || [])
+                    .map((mEmail) => {
+                      const mp = findProfileByEmail(mEmail);
+                      return `
+                        <span class="nm-exp-member-chip" style="cursor:pointer;" onclick="nmInspectUser('${esc((mEmail || "").toLowerCase())}')">
+                          ${avatarHtml(mp, "sm")}
+                          <span>${esc(mp.name || mEmail)}</span>
+                        </span>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </div>
+
+              <div style="max-height:180px;overflow-y:auto;margin-bottom:8px;">
+                ${
+                  Array.isArray(currentComm.posts) && currentComm.posts.length
+                    ? currentComm.posts
+                        .map(
+                          (cp) => `
+                        <div style="padding:6px 8px;border-radius:8px;background:rgba(148,163,184,0.14);margin-bottom:6px;font-size:13px;">
+                          <strong>${esc(cp.author)}:</strong> ${esc(cp.text)}
+                        </div>
+                      `
+                        )
+                        .join("")
+                    : `<div class="muted">Ergaan keessa hin jiru.</div>`
+                }
+              </div>
+
+              <form onsubmit="nmPostInCommunityHub(event, '${esc(currentComm.id)}')" style="display:flex;gap:6px;">
+                <input type="text" id="nm-hub-msg-${esc(currentComm.id)}" placeholder="Ergaa keessatti barreessi..." required />
+                <button type="submit" class="btn btn-primary btn-sm">Ergi</button>
+              </form>
+            </div>
+          `
+            : ""
+        }
+      `;
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    ensureExpandBox();
+    renderExpandContent();
+  });
+})();
 </script>
 </body>
   </html>
