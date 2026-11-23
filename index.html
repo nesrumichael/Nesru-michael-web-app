@@ -1547,6 +1547,180 @@
     });
   });
 })();
-</script>
+</script><!-- ==========================================================
+     NESRU MICHAEL SHOW SUPABASE BEFORE LOGIN ONLY (APPEND BEFORE </body>)
+     ========================================================== -->
+<style id="nm-prelogin-supabase-style">
+  #nm-prelogin-supabase-banner {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+    width: calc(100% - 24px);
+    max-width: 560px;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 2px solid #38bdf8;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    font-size: 13px;
+  }
+  #nm-prelogin-supabase-banner.nm-prelogin-hidden {
+    display: none !important;
+  }
+  .nm-prelogin-row {
+    margin-bottom: 6px;
+    word-break: break-all;
+  }
+  .nm-prelogin-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .nm-prelogin-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .nm-prelogin-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+  }
+  .nm-prelogin-btn-ghost {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid #475569;
+  }
+</style>
+
+<div id="nm-prelogin-supabase-banner">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+    <strong>🗄️ Supabase (Osoo Login Hin Goone Dura)</strong>
+    <span id="nm-prelogin-sb-badge" style="background:#16a34a;color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;">Active</span>
+  </div>
+
+  <div class="nm-prelogin-row">
+    <strong>URL:</strong> <span id="nm-prelogin-sb-url">https://uvwkkeqicejfuqczclbt.supabase.co</span>
+  </div>
+  <div class="nm-prelogin-row">
+    <strong>Anon Key:</strong> <span id="nm-prelogin-sb-key"></span>
+  </div>
+  <div class="nm-prelogin-row">
+    <strong>Status:</strong> <span id="nm-prelogin-sb-status">Qoraa jira...</span>
+  </div>
+
+  <div class="nm-prelogin-actions">
+    <button type="button" class="nm-prelogin-btn nm-prelogin-btn-primary" onclick="nmPreloginRefreshSupabase()">🔄 Status Haaromsi</button>
+    <button type="button" class="nm-prelogin-btn nm-prelogin-btn-ghost" onclick="nmPreloginCheckTables()">📊 Tables Qori</button>
+    <button type="button" class="nm-prelogin-btn nm-prelogin-btn-ghost" onclick="nmPreloginHideBanner()">✕ Dhoksi</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NM_PRE_URL = "https://uvwkkeqicejfuqczclbt.supabase.co";
+  const NM_PRE_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2d2trZXFpY2VqZnVxY3pjbGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDkyMDMsImV4cCI6MjExMDY4NTIwM30.QzR4DDlBlfQva6hQWtdyXXZK1PCnBCT73XAifwVbMSs";
+
+  function nmPreGetClient() {
+    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
+    if (window.sb && window.sb.auth) return window.sb;
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      const c = window.supabase.createClient(NM_PRE_URL, NM_PRE_KEY);
+      window.supabaseClient = c;
+      window.sb = c;
+      return c;
+    }
+    return null;
+  }
+
+  function nmPreSetBannerVisible(show) {
+    const banner = document.getElementById("nm-prelogin-supabase-banner");
+    if (!banner) return;
+    banner.classList.toggle("nm-prelogin-hidden", !show);
+  }
+
+  window.nmPreloginHideBanner = function () {
+    nmPreSetBannerVisible(false);
+  };
+
+  window.nmPreloginRefreshSupabase = async function () {
+    const keyEl = document.getElementById("nm-prelogin-sb-key");
+    const statusEl = document.getElementById("nm-prelogin-sb-status");
+    const badgeEl = document.getElementById("nm-prelogin-sb-badge");
+
+    if (keyEl) {
+      keyEl.textContent = NM_PRE_KEY.slice(0, 18) + "..." + NM_PRE_KEY.slice(-10);
+    }
+
+    const client = nmPreGetClient();
+    if (!client || !client.auth) {
+      if (statusEl) statusEl.textContent = "Supabase client hin fe'amne.";
+      if (badgeEl) {
+        badgeEl.textContent = "No Client";
+        badgeEl.style.background = "#dc2626";
+      }
+      return;
+    }
+
+    try {
+      const { data, error } = await client.auth.getSession();
+      if (error) {
+        if (statusEl) statusEl.textContent = "Error: " + error.message;
+        return;
+      }
+      const user = data && data.session ? data.session.user : null;
+      if (user) {
+        // Erga login godhame booda banner kana ofiin dhoksa
+        nmPreSetBannerVisible(false);
+      } else {
+        nmPreSetBannerVisible(true);
+        if (statusEl) statusEl.textContent = "Connected (Hin seenamne / Pre-login)";
+        if (badgeEl) {
+          badgeEl.textContent = "Connected";
+          badgeEl.style.background = "#16a34a";
+        }
+      }
+    } catch (e) {
+      if (statusEl) statusEl.textContent = "Rakkoon uumame: " + (e.message || e);
+    }
+  };
+
+  window.nmPreloginCheckTables = async function () {
+    const statusEl = document.getElementById("nm-prelogin-sb-status");
+    const client = nmPreGetClient();
+    if (!client) {
+      if (statusEl) statusEl.textContent = "Supabase client hin argamne.";
+      return;
+    }
+    if (statusEl) statusEl.textContent = "Tables qoraa jira...";
+    const p1 = await client.from("profiles").select("id").limit(1);
+    const p2 = await client.from("posts").select("id").limit(1);
+    const s1 = p1.error ? "profiles: ❌ (" + p1.error.message + ")" : "profiles: ✅";
+    const s2 = p2.error ? "posts: ❌ (" + p2.error.message + ")" : "posts: ✅";
+    if (statusEl) statusEl.textContent = s1 + " | " + s2;
+  };
+
+  window.addEventListener("DOMContentLoaded", function () {
+    nmPreloginRefreshSupabase();
+    const client = nmPreGetClient();
+    if (client && client.auth && typeof client.auth.onAuthStateChange === "function") {
+      client.auth.onAuthStateChange(function (_event, session) {
+        if (session && session.user) {
+          nmPreSetBannerVisible(false);
+        } else {
+          nmPreSetBannerVisible(true);
+        }
+      });
+    }
+  });
+})();
+          </script>
 </body>
   </html>
