@@ -47,6 +47,7 @@
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
+      touch-action: manipulation;
     }
     button.sm { padding: 7px 11px; font-size: 13px; }
     button.full { width: 100%; }
@@ -128,6 +129,12 @@
       padding: 6px 10px;
       border-radius: 8px;
     }
+    .status-msg {
+      color: #fbbf24;
+      font-size: 13px;
+      margin-top: 8px;
+      min-height: 18px;
+    }
   </style>
 </head>
 <body>
@@ -188,7 +195,8 @@
         <label>Password</label>
         <input type="password" id="password" placeholder="Create strong password" />
 
-        <button type="button" class="full" onclick="submitSignup()">🚀 Create Account & Connect Globally</button>
+        <button type="button" id="btnSignupSubmit" class="full" onclick="submitSignup()">🚀 Create Account & Connect Globally</button>
+        <div id="authStatus" class="status-msg"></div>
       </div>
 
       <div id="signinBox" style="display:none">
@@ -196,7 +204,8 @@
         <input type="text" id="loginUser" placeholder="nesrumichael" />
         <label>Password</label>
         <input type="password" id="loginPass" placeholder="Password" />
-        <button type="button" class="full" onclick="submitSignin()">🔓 Sign In</button>
+        <button type="button" id="btnSigninSubmit" class="full" onclick="submitSignin()">🔓 Sign In</button>
+        <div id="signinStatus" class="status-msg"></div>
       </div>
     </div>
 
@@ -257,7 +266,15 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = typeof io !== 'undefined' ? io() : null;
+    let socket = null;
+    try {
+      if (typeof io === 'function') {
+        socket = io({ reconnection: true, timeout: 5000 });
+      }
+    } catch (err) {
+      socket = null;
+    }
+
     let currentUser = '';
     try { currentUser = localStorage.getItem('ourface_user') || ''; } catch (err) {}
     let appState = { posts: [], chats: [], profiles: {}, notifications: {} };
@@ -273,48 +290,79 @@
       });
     }
 
+    function setStatus(id, msg) {
+      const el = document.getElementById(id);
+      if (el) el.innerText = msg || '';
+    }
+
     function toggleAuth(mode) {
       document.getElementById('signupBox').style.display = mode === 'signup' ? 'block' : 'none';
       document.getElementById('signinBox').style.display = mode === 'signin' ? 'block' : 'none';
       document.getElementById('btnShowSignup').className = mode === 'signup' ? '' : 'secondary';
       document.getElementById('btnShowSignin').className = mode === 'signin' ? '' : 'secondary';
+      setStatus('authStatus', '');
+      setStatus('signinStatus', '');
     }
 
     function submitSignup() {
-      const name = document.getElementById('fullName').value.trim();
-      const user = cleanHandle(document.getElementById('username').value);
-      if (!name && !user) {
-        alert('Maaloo maqaa ykn username galchi!');
-        return;
-      }
-      currentUser = user || cleanHandle(name);
+      const nameEl = document.getElementById('fullName');
+      const userEl = document.getElementById('username');
+      const emailEl = document.getElementById('email');
+      const name = (nameEl && nameEl.value ? nameEl.value : '').trim();
+      const user = cleanHandle(userEl && userEl.value ? userEl.value : '');
+      const emailPrefix = cleanHandle((emailEl && emailEl.value ? emailEl.value : '').split('@')[0]);
+
+      const chosen = user || cleanHandle(name) || emailPrefix || 'nesrumichael';
+      currentUser = chosen;
       try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
+      setStatus('authStatus', 'Seenaa jira (@' + currentUser + ')...');
       enterApp();
     }
 
     function submitSignin() {
-      const user = cleanHandle(document.getElementById('loginUser').value);
-      if (!user) {
-        alert('Maaloo username ykn email galchi!');
-        return;
-      }
-      currentUser = user;
+      const loginEl = document.getElementById('loginUser');
+      const raw = (loginEl && loginEl.value ? loginEl.value : '').trim();
+      const chosen = cleanHandle(raw.split('@')[0]) || 'nesrumichael';
+      currentUser = chosen;
       try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
+      setStatus('signinStatus', 'Seenaa jira (@' + currentUser + ')...');
       enterApp();
     }
 
     function enterApp() {
-      document.getElementById('authSection').style.display = 'none';
-      document.getElementById('signOutBtn').style.display = 'inline-block';
-      document.getElementById('welcomeBanner').innerText = 'Akkam, @' + currentUser + ' — Connected to Global & Orbital Mesh!';
+      const authSec = document.getElementById('authSection');
+      const signOutBtn = document.getElementById('signOutBtn');
+      const banner = document.getElementById('welcomeBanner');
+
+      if (authSec) authSec.style.display = 'none';
+      if (signOutBtn) signOutBtn.style.display = 'inline-block';
+      if (banner) banner.innerText = 'Akkam, @' + currentUser + ' — Connected to Global & Orbital Mesh!';
+
+      if (!appState.profiles) appState.profiles = {};
+      if (!appState.profiles[currentUser]) {
+        appState.profiles[currentUser] = {
+          user: currentUser,
+          bio: '',
+          lang: 'Afaan Oromo',
+          followers: [],
+          following: [],
+          friends: [],
+          friendRequests: []
+        };
+      }
+
       showTab(activeTabName || 'feed');
-      if (socket) socket.emit('join', currentUser);
+      try {
+        if (socket) socket.emit('join', currentUser);
+      } catch (err) {}
       renderAll();
     }
 
     function signOut() {
       try { localStorage.removeItem('ourface_user'); } catch (err) {}
       currentUser = '';
+      setStatus('authStatus', '');
+      setStatus('signinStatus', '');
       document.getElementById('authSection').style.display = 'block';
       document.getElementById('signOutBtn').style.display = 'none';
       document.querySelectorAll('.tab-panel').forEach(function(el) { el.style.display = 'none'; });
@@ -334,31 +382,41 @@
     function toggleFollow(targetUser) {
       const t = cleanHandle(targetUser);
       if (!currentUser || !t || currentUser === t) return;
-      if (socket) socket.emit('toggle_follow', { actor: currentUser, target: t });
+      try {
+        if (socket) socket.emit('toggle_follow', { actor: currentUser, target: t });
+      } catch (err) {}
     }
 
     function sendFriendRequest(targetUser) {
       const t = cleanHandle(targetUser);
       if (!currentUser || !t || currentUser === t) return;
-      if (socket) socket.emit('send_friend_request', { actor: currentUser, target: t });
+      try {
+        if (socket) socket.emit('send_friend_request', { actor: currentUser, target: t });
+      } catch (err) {}
     }
 
     function acceptFriend(requester) {
       const r = cleanHandle(requester);
       if (!currentUser || !r) return;
-      if (socket) socket.emit('accept_friend', { actor: currentUser, requester: r });
+      try {
+        if (socket) socket.emit('accept_friend', { actor: currentUser, requester: r });
+      } catch (err) {}
     }
 
     function declineFriend(requester) {
       const r = cleanHandle(requester);
       if (!currentUser || !r) return;
-      if (socket) socket.emit('decline_friend', { actor: currentUser, requester: r });
+      try {
+        if (socket) socket.emit('decline_friend', { actor: currentUser, requester: r });
+      } catch (err) {}
     }
 
     function removeFriend(targetUser) {
       const t = cleanHandle(targetUser);
       if (!currentUser || !t) return;
-      if (socket) socket.emit('remove_friend', { actor: currentUser, target: t });
+      try {
+        if (socket) socket.emit('remove_friend', { actor: currentUser, target: t });
+      } catch (err) {}
     }
 
     function quickFollow() {
@@ -379,7 +437,9 @@
 
     function markAllRead() {
       if (!currentUser) return;
-      if (socket) socket.emit('mark_notifs_read', currentUser);
+      try {
+        if (socket) socket.emit('mark_notifs_read', currentUser);
+      } catch (err) {}
     }
 
     function publishPost() {
@@ -394,18 +454,32 @@
         likes: 0,
         comments: []
       };
-      if (socket) socket.emit('post', item);
+      try {
+        if (socket) {
+          socket.emit('post', item);
+        } else {
+          appState.posts.push(item);
+          renderAll();
+        }
+      } catch (err) {
+        appState.posts.push(item);
+        renderAll();
+      }
       input.value = '';
     }
 
     function likePost(id) {
-      if (socket) socket.emit('like', id);
+      try {
+        if (socket) socket.emit('like', id);
+      } catch (err) {}
     }
 
     function sendComment(id) {
       const inp = document.getElementById('cmt-' + id);
       if (!inp || !inp.value.trim() || !currentUser) return;
-      if (socket) socket.emit('comment', { id: id, author: currentUser, text: inp.value.trim() });
+      try {
+        if (socket) socket.emit('comment', { id: id, author: currentUser, text: inp.value.trim() });
+      } catch (err) {}
       inp.value = '';
     }
 
@@ -418,9 +492,37 @@
         text: text,
         time: new Date().toLocaleTimeString()
       };
-      if (socket) socket.emit('chat', msg);
+      try {
+        if (socket) {
+          socket.emit('chat', msg);
+        } else {
+          appState.chats.push(msg);
+          renderAll();
+        }
+      } catch (err) {
+        appState.chats.push(msg);
+        renderAll();
+      }
       input.value = '';
     }
+
+    // Backup click/pointer listener on submit buttons so touch always triggers
+    document.addEventListener('DOMContentLoaded', function() {
+      const sBtn = document.getElementById('btnSignupSubmit');
+      const lBtn = document.getElementById('btnSigninSubmit');
+      if (sBtn) {
+        sBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          submitSignup();
+        });
+      }
+      if (lBtn) {
+        lBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          submitSignin();
+        });
+      }
+    });
 
     function renderAll() {
       const profiles = appState.profiles || {};
@@ -451,7 +553,6 @@
           '<div class="stat-box">📩 Requests: <strong>' + requests.length + '</strong></div>';
       }
 
-      // Friend requests
       const reqBox = document.getElementById('friendRequestsBox');
       if (reqBox) {
         if (requests.length > 0) {
@@ -470,7 +571,6 @@
         }
       }
 
-      // My Friends
       const friendsEl = document.getElementById('myFriendsList');
       if (friendsEl) {
         friendsEl.innerHTML = friends.length ? friends.map(function(f) {
@@ -481,7 +581,6 @@
         }).join('') : '<p style="color:var(--muted);font-size:13px">Hanga ammaa michoonni hin jiran. Nama tokko "Add Friend" godhi.</p>';
       }
 
-      // All users
       const allUsersEl = document.getElementById('allUsersList');
       if (allUsersEl) {
         const userKeys = Object.keys(profiles).filter(function(u) { return u !== currentUser; });
@@ -512,7 +611,6 @@
         }).join('') : '<p style="color:var(--muted);font-size:13px">Namoonni biroo yeroo seenan asitti mul'atu.</p>';
       }
 
-      // Notifications
       const notifsEl = document.getElementById('notifsList');
       if (notifsEl) {
         notifsEl.innerHTML = myNotifs.length ? myNotifs.map(function(n) {
@@ -523,7 +621,6 @@
         }).join('') : '<p style="color:var(--muted);font-size:13px">Notifications haaraa hin jiru.</p>';
       }
 
-      // Posts
       const postsList = document.getElementById('postsList');
       if (postsList) {
         postsList.innerHTML = (appState.posts || []).slice().reverse().map(function(p) {
@@ -561,7 +658,6 @@
         }).join('');
       }
 
-      // Chat
       const chatList = document.getElementById('chatList');
       if (chatList) {
         chatList.innerHTML = (appState.chats || []).map(function(m) {
