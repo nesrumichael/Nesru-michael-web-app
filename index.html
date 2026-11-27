@@ -6,12 +6,10 @@
   <title>Our Face — Global & Orbital Social Network</title>
   <meta name="theme-color" content="#38bdf8" />
   <link rel="manifest" href="./manifest.json" />
-  <link rel="stylesheet" href="./style.css" />
   <style>
-    /* Fallback styling yoo style.css dhufe illee akka bareedee mul'atuuf */
     :root {
       --bg: #070d1d;
-      --card: rgba(17, 24, 39, 0.9);
+      --card: rgba(17, 24, 39, 0.94);
       --accent: #38bdf8;
       --text: #f8fafc;
       --muted: #94a3b8;
@@ -42,11 +40,13 @@
       background: var(--accent);
       color: #04101c;
       border: none;
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 10px;
       font-weight: 700;
+      font-size: 15px;
       cursor: pointer;
     }
+    button.full { width: 100%; }
     button.secondary {
       background: #1e293b;
       color: var(--text);
@@ -54,14 +54,15 @@
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px 12px;
+      padding: 11px 12px;
       margin: 6px 0 12px;
       border-radius: 10px;
       border: 1px solid #334155;
       background: #0f172a;
       color: var(--text);
+      font-size: 15px;
     }
-    label { font-size: 14px; color: var(--muted); font-weight: 600; }
+    label { font-size: 14px; color: var(--muted); font-weight: 600; display: block; }
     .badge {
       display: inline-block;
       background: rgba(56, 189, 248, 0.15);
@@ -77,6 +78,13 @@
       border-radius: 12px;
       padding: 12px;
       margin-top: 10px;
+    }
+    .cmt-item {
+      margin-top: 6px;
+      padding-left: 10px;
+      border-left: 2px solid var(--accent);
+      font-size: 13px;
+      color: #cbd5e1;
     }
   </style>
 </head>
@@ -102,19 +110,19 @@
     <!-- Auth Section -->
     <div class="card" id="authSection">
       <div class="nav-bar">
-        <button type="button" onclick="toggleAuth('signup')">Create Account (Sign Up)</button>
-        <button type="button" class="secondary" onclick="toggleAuth('signin')">Sign In</button>
+        <button type="button" id="btnShowSignup" onclick="toggleAuth('signup')">Create Account (Sign Up)</button>
+        <button type="button" id="btnShowSignin" class="secondary" onclick="toggleAuth('signin')">Sign In</button>
       </div>
 
-      <form id="signupForm" onsubmit="handleAuth(event, 'signup')">
+      <div id="signupBox">
         <label>Full Name / Maqaa Guutuu</label>
-        <input type="text" id="fullName" placeholder="e.g., Nesru Michael" required />
+        <input type="text" id="fullName" placeholder="e.g., Nesru Michael" />
 
         <label>Username (@handle)</label>
-        <input type="text" id="username" placeholder="e.g., nesrumichael" required />
+        <input type="text" id="username" placeholder="e.g., nesrumichael" />
 
         <label>Email Address</label>
-        <input type="email" id="email" placeholder="you@example.com" required />
+        <input type="email" id="email" placeholder="you@example.com" />
 
         <label>Country & International Code / Biyyaafi Koodii</label>
         <select id="country">
@@ -134,25 +142,25 @@
         </select>
 
         <label>Password</label>
-        <input type="password" id="password" placeholder="Create strong password" required />
+        <input type="password" id="password" placeholder="Create strong password" />
 
-        <button type="submit">🚀 Create Account & Connect Globally</button>
-      </form>
+        <button type="button" class="full" onclick="submitSignup()">🚀 Create Account & Connect Globally</button>
+      </div>
 
-      <form id="signinForm" style="display:none" onsubmit="handleAuth(event, 'signin')">
+      <div id="signinBox" style="display:none">
         <label>Username or Email</label>
-        <input type="text" id="loginUser" placeholder="nesrumichael" required />
+        <input type="text" id="loginUser" placeholder="nesrumichael" />
         <label>Password</label>
-        <input type="password" id="loginPass" placeholder="Password" required />
-        <button type="submit">🔓 Sign In</button>
-      </form>
+        <input type="password" id="loginPass" placeholder="Password" />
+        <button type="button" class="full" onclick="submitSignin()">🔓 Sign In</button>
+      </div>
     </div>
 
     <!-- Feed Section -->
     <div class="card tab-panel" id="tab-feed" style="display:none">
       <p id="welcomeBanner" style="color:#86efac;font-weight:600"></p>
       <textarea id="postInput" rows="3" placeholder="Yaada kee addunyaa fi hawaaf qoodi..."></textarea>
-      <button type="button" onclick="publishPost()">📡 Maxxansi (Broadcast)</button>
+      <button type="button" class="full" onclick="publishPost()">📡 Maxxansi (Broadcast)</button>
       <div id="postsList"></div>
     </div>
 
@@ -161,7 +169,7 @@
       <h3>💬 Real-Time Global Chat</h3>
       <div id="chatList" style="max-height:260px;overflow-y:auto;margin-bottom:10px"></div>
       <input type="text" id="chatInput" placeholder="Ergaa barreessi..." />
-      <button type="button" onclick="sendChat()">Ergi</button>
+      <button type="button" class="full" onclick="sendChat()">Ergi</button>
     </div>
 
     <!-- About Section -->
@@ -174,35 +182,45 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="./world-data.js"></script>
-  <script src="./app.js"></script>
   <script>
-    const socket = io();
-    let currentUser = localStorage.getItem('ourface_user') || '';
+    const socket = typeof io !== 'undefined' ? io() : null;
+    let currentUser = '';
+    try { currentUser = localStorage.getItem('ourface_user') || ''; } catch (err) {}
     let appState = { posts: [], chats: [], profiles: {} };
 
     function esc(str) {
-      return String(str || '').replace(/[&<>"']/g, (c) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[c]));
+      return String(str || '').replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
     }
 
     function toggleAuth(mode) {
-      document.getElementById('signupForm').style.display = mode === 'signup' ? 'block' : 'none';
-      document.getElementById('signinForm').style.display = mode === 'signin' ? 'block' : 'none';
+      document.getElementById('signupBox').style.display = mode === 'signup' ? 'block' : 'none';
+      document.getElementById('signinBox').style.display = mode === 'signin' ? 'block' : 'none';
+      document.getElementById('btnShowSignup').className = mode === 'signup' ? '' : 'secondary';
+      document.getElementById('btnShowSignin').className = mode === 'signin' ? '' : 'secondary';
     }
 
-    function handleAuth(e, mode) {
-      e.preventDefault();
-      if (mode === 'signup') {
-        const name = document.getElementById('fullName').value.trim();
-        const user = document.getElementById('username').value.trim();
-        currentUser = user || name;
-      } else {
-        currentUser = document.getElementById('loginUser').value.trim();
+    function submitSignup() {
+      const name = document.getElementById('fullName').value.trim();
+      const user = document.getElementById('username').value.trim();
+      if (!name && !user) {
+        alert('Maaloo maqaa ykn username galchi!');
+        return;
       }
-      if (!currentUser) return;
-      localStorage.setItem('ourface_user', currentUser);
+      currentUser = (user || name).replace(/^@+/, '');
+      try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
+      enterApp();
+    }
+
+    function submitSignin() {
+      const user = document.getElementById('loginUser').value.trim();
+      if (!user) {
+        alert('Maaloo username ykn email galchi!');
+        return;
+      }
+      currentUser = user.replace(/^@+/, '');
+      try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
       enterApp();
     }
 
@@ -211,19 +229,19 @@
       document.getElementById('signOutBtn').style.display = 'inline-block';
       document.getElementById('welcomeBanner').innerText = 'Akkam, @' + currentUser + ' — Connected to Global & Orbital Mesh!';
       showTab('feed');
-      socket.emit('join', currentUser);
+      if (socket) socket.emit('join', currentUser);
     }
 
     function signOut() {
-      localStorage.removeItem('ourface_user');
+      try { localStorage.removeItem('ourface_user'); } catch (err) {}
       currentUser = '';
       document.getElementById('authSection').style.display = 'block';
       document.getElementById('signOutBtn').style.display = 'none';
-      document.querySelectorAll('.tab-panel').forEach((el) => el.style.display = 'none');
+      document.querySelectorAll('.tab-panel').forEach(function(el) { el.style.display = 'none'; });
     }
 
     function showTab(name) {
-      document.querySelectorAll('.tab-panel').forEach((el) => el.style.display = 'none');
+      document.querySelectorAll('.tab-panel').forEach(function(el) { el.style.display = 'none'; });
       const target = document.getElementById('tab-' + name);
       if (target) target.style.display = 'block';
     }
@@ -232,46 +250,82 @@
       const input = document.getElementById('postInput');
       const content = input.value.trim();
       if (!content || !currentUser) return;
-      socket.emit('post', {
+      const item = {
+        id: Date.now(),
         author: currentUser,
-        content,
-        time: new Date().toLocaleTimeString()
-      });
+        content: content,
+        time: new Date().toLocaleTimeString(),
+        likes: 0,
+        comments: []
+      };
+      if (socket) {
+        socket.emit('post', item);
+      } else {
+        appState.posts.push(item);
+        renderAll();
+      }
       input.value = '';
     }
 
     function likePost(id) {
-      socket.emit('like', id);
+      if (socket) socket.emit('like', id);
+    }
+
+    function sendComment(id) {
+      const inp = document.getElementById('cmt-' + id);
+      if (!inp || !inp.value.trim() || !currentUser) return;
+      if (socket) socket.emit('comment', { id: id, author: currentUser, text: inp.value.trim() });
+      inp.value = '';
     }
 
     function sendChat() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
       if (!text || !currentUser) return;
-      socket.emit('chat', {
+      const msg = {
         sender: currentUser,
-        text,
+        text: text,
         time: new Date().toLocaleTimeString()
-      });
+      };
+      if (socket) {
+        socket.emit('chat', msg);
+      } else {
+        appState.chats.push(msg);
+        renderAll();
+      }
       input.value = '';
     }
 
-    socket.on('state', (data) => {
-      appState = data || { posts: [], chats: [], profiles: {} };
+    function renderAll() {
       const postsList = document.getElementById('postsList');
-      postsList.innerHTML = [...appState.posts].reverse().map((p) =>
-        '<div class="post-card">' +
+      postsList.innerHTML = appState.posts.slice().reverse().map(function(p) {
+        const cmts = (p.comments || []).map(function(c) {
+          return '<div class="cmt-item"><strong>@' + esc(c.author) + ':</strong> ' + esc(c.text) + '</div>';
+        }).join('');
+        return '<div class="post-card">' +
           '<strong>@' + esc(p.author) + '</strong> <small style="color:#94a3b8">(' + esc(p.time) + ')</small>' +
           '<p>' + esc(p.content) + '</p>' +
           '<button type="button" class="secondary" onclick="likePost(' + p.id + ')">❤️ Like (' + (p.likes || 0) + ')</button>' +
-        '</div>'
-      ).join('');
+          cmts +
+          '<div style="display:flex;gap:8px;margin-top:8px">' +
+            '<input id="cmt-' + p.id + '" placeholder="Comment barreessi..." style="margin:0" />' +
+            '<button type="button" onclick="sendComment(' + p.id + ')">Ergi</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
 
       const chatList = document.getElementById('chatList');
-      chatList.innerHTML = appState.chats.map((m) =>
-        '<div class="msg-card"><strong>@' + esc(m.sender) + ':</strong> ' + esc(m.text) + ' <small style="color:#94a3b8">(' + esc(m.time) + ')</small></div>'
-      ).join('');
-    });
+      chatList.innerHTML = appState.chats.map(function(m) {
+        return '<div class="msg-card"><strong>@' + esc(m.sender) + ':</strong> ' + esc(m.text) + ' <small style="color:#94a3b8">(' + esc(m.time) + ')</small></div>';
+      }).join('');
+    }
+
+    if (socket) {
+      socket.on('state', function(data) {
+        appState = data || { posts: [], chats: [], profiles: {} };
+        renderAll();
+      });
+    }
 
     if (currentUser) {
       enterApp();
