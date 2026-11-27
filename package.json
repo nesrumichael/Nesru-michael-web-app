@@ -2,10 +2,10 @@
   "name": "our-face-global-platform",
   "version": "1.0.0",
   "description": "Our Face - Next-Generation Global & Space-Ready Social Media Platform developed by Nesru Michael (3rd Year EDPM Student)",
-  "main": "server/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "author": "Nesru Michael <nesrumichael@gmail.com> (+251923502787)",
   "license": "MIT",

@@ -1,14 +1,3 @@
-/**
- * ============================================================================
- * OUR FACE - GLOBAL & ORBITAL REAL-TIME SOCIAL MEDIA SERVER
- * ============================================================================
- * Lead Developer: Nesru Michael
- * Academic Program: 3rd Year Student, Educational Planning & Management (EDPM)
- * Email: nesrumichael@gmail.com
- * Phone: +251923502787
- * Portfolio: https://nesrumichaelet.pages.dev
- * ============================================================================
- */
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -17,87 +6,94 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const { Server } = require('socket.io');
-const { v4: uuidv4 } = require('uuid');
-
-const apiRoutes = require('./routes/api');
-const db = require('./models/DatabaseEngine');
-const satRelay = require('./services/SatelliteRelayService');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
 });
 
-app.set('io', io);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// API Routes
-app.use('/api', apiRoutes);
+app.use(express.static(__dirname));
 
-// Active Online Users Map (userId -> socketId)
-const onlineUsers = new Map();
+let posts = [];
+let chats = [];
+let profiles = {};
 
-io.on('connection', (socket) => {
-  socket.on('user:online', (userId) => {
-    onlineUsers.set(userId, socket.id);
-    io.emit('presence:update', Array.from(onlineUsers.keys()));
-  });
-
-  // Real-time Private Direct Messaging between Friends & Global Users
-  socket.on('chat:private_message', (data) => {
-    const { senderId, senderName, receiverId, text } = data;
-    if (!senderId || !receiverId || !text) return;
-
-    const satPacket = satRelay.encapsulateOrbitalPacket('PRIVATE_CHAT_MSG', 'ORBITAL_MESH', uuidv4());
-    const messageRecord = {
-      id: uuidv4(),
-      senderId,
-      senderName,
-      receiverId,
-      text: text.trim(),
-      satelliteRelay: satPacket.satelliteNode,
-      timestamp: new Date().toISOString()
-    };
-
-    db.addMessage(messageRecord);
-
-    const receiverSocket = onlineUsers.get(receiverId);
-    if (receiverSocket) {
-      io.to(receiverSocket).emit('chat:receive_message', messageRecord);
-    }
-    socket.emit('chat:receive_message', messageRecord);
-  });
-
-  socket.on('disconnect', () => {
-    for (const [uid, sid] of onlineUsers.entries()) {
-      if (sid === socket.id) {
-        onlineUsers.delete(uid);
-        break;
-      }
-    }
-    io.emit('presence:update', Array.from(onlineUsers.keys()));
-  });
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Fallback to SPA index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+io.on('connection', (socket) => {
+  socket.emit('state', { posts, chats, profiles });
+
+  socket.on('join', (user) => {
+    if (!user) return;
+    if (!profiles[user]) {
+      profiles[user] = { user, bio: '', lang: 'Afaan Oromo' };
+    }
+    io.emit('state', { posts, chats, profiles });
+  });
+
+  socket.on('post', (data) => {
+    if (!data || !data.content) return;
+    posts.push({
+      id: Date.now() + Math.floor(Math.random() * 999),
+      author: data.author || 'Anonymous',
+      content: data.content,
+      time: data.time || new Date().toLocaleTimeString(),
+      likes: 0,
+      comments: []
+    });
+    io.emit('state', { posts, chats, profiles });
+  });
+
+  socket.on('like', (id) => {
+    const postItem = posts.find((x) => x.id === id);
+    if (postItem) {
+      postItem.likes = (postItem.likes || 0) + 1;
+      io.emit('state', { posts, chats, profiles });
+    }
+  });
+
+  socket.on('comment', ({ id, author, text }) => {
+    const postItem = posts.find((x) => x.id === id);
+    if (postItem && text) {
+      postItem.comments.push({
+        author: author || 'Anonymous',
+        text
+      });
+      io.emit('state', { posts, chats, profiles });
+    }
+  });
+
+  socket.on('chat', (msg) => {
+    if (!msg || !msg.text) return;
+    chats.push({
+      sender: msg.sender || 'Anonymous',
+      text: msg.text,
+      time: msg.time || new Date().toLocaleTimeString()
+    });
+    io.emit('state', { posts, chats, profiles });
+  });
+
+  socket.on('profile', (data) => {
+    if (!data || !data.user) return;
+    profiles[data.user] = data;
+    io.emit('state', { posts, chats, profiles });
+    socket.emit('profile_saved');
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`
-  ╔══════════════════════════════════════════════════════════════════════╗
-  ║  OUR FACE - GLOBAL & ORBITAL SOCIAL PLATFORM IS LIVE                 ║
-  ║  Port: ${PORT}                                                          ║
-  ║  Developer: Nesru Michael (3rd Year EDPM Program)                    ║
-  ║  Email: nesrumichael@gmail.com | Phone: +251923502787                ║
-  ║  Portfolio: https://nesrumichaelet.pages.dev                         ║
-  ╚══════════════════════════════════════════════════════════════════════╝
-  `);
+  console.log('OUR FACE LIVE ON PORT ' + PORT);
 });
