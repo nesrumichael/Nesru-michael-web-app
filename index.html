@@ -9,8 +9,10 @@
   <style>
     :root {
       --bg: #070d1d;
-      --card: rgba(17, 24, 39, 0.94);
+      --card: rgba(17, 24, 39, 0.95);
       --accent: #38bdf8;
+      --accent2: #22c55e;
+      --warn: #f59e0b;
       --text: #f8fafc;
       --muted: #94a3b8;
       --border: #1e293b;
@@ -24,7 +26,7 @@
       padding: 16px;
       line-height: 1.5;
     }
-    .container { max-width: 820px; margin: 0 auto; }
+    .container { max-width: 860px; margin: 0 auto; }
     .card {
       background: var(--card);
       border: 1px solid rgba(56, 189, 248, 0.35);
@@ -40,21 +42,30 @@
       background: var(--accent);
       color: #04101c;
       border: none;
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-radius: 10px;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14px;
       cursor: pointer;
     }
+    button.sm { padding: 7px 11px; font-size: 13px; }
     button.full { width: 100%; }
     button.secondary {
       background: #1e293b;
       color: var(--text);
       border: 1px solid #334155;
     }
+    button.success {
+      background: var(--accent2);
+      color: #041a0b;
+    }
+    button.warn {
+      background: var(--warn);
+      color: #1a1102;
+    }
     input, select, textarea {
       width: 100%;
-      padding: 11px 12px;
+      padding: 10px 12px;
       margin: 6px 0 12px;
       border-radius: 10px;
       border: 1px solid #334155;
@@ -72,12 +83,29 @@
       font-size: 12px;
       font-weight: 600;
     }
-    .post-card, .msg-card {
+    .notif-pill {
+      display: inline-block;
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 999px;
+      margin-left: 4px;
+    }
+    .post-card, .msg-card, .user-card, .notif-card {
       background: #0f172a;
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px;
       margin-top: 10px;
+    }
+    .user-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
     .cmt-item {
       margin-top: 6px;
@@ -85,6 +113,20 @@
       border-left: 2px solid var(--accent);
       font-size: 13px;
       color: #cbd5e1;
+    }
+    .stats-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+    .stat-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -96,10 +138,12 @@
       <p><strong>Our Face — Addunyaa fi Hawaa Walitti Hidhu</strong><br/>
       Waltajjii hawaasaa ammayyaa yeroo qabatamaa (Real-Time) keessatti namoota addunyaa guutuu fi networkii saatalaayitii walqunnamsiisu. Developed by <strong>Nesru Michael</strong> (3rd Year Student, EDPM Program).</p>
       <div class="nav-bar">
-        <button type="button" onclick="showTab('feed')">🏠 Home Feed</button>
-        <button type="button" class="secondary" onclick="showTab('chat')">💬 Chat</button>
-        <button type="button" class="secondary" onclick="showTab('about')">ℹ️ About & Policy</button>
-        <a href="https://nesrumichaelet.pages.dev" target="_blank"><button type="button" class="secondary">🌐 Developer Portfolio</button></a>
+        <button type="button" id="nav-feed" onclick="showTab('feed')">🏠 Home Feed</button>
+        <button type="button" id="nav-people" class="secondary" onclick="showTab('people')">👥 Friends & Follow</button>
+        <button type="button" id="nav-notifs" class="secondary" onclick="showTab('notifs')">🔔 Notifications <span id="notifBadge" class="notif-pill" style="display:none">0</span></button>
+        <button type="button" id="nav-chat" class="secondary" onclick="showTab('chat')">💬 Chat</button>
+        <button type="button" id="nav-about" class="secondary" onclick="showTab('about')">ℹ️ About</button>
+        <a href="https://nesrumichaelet.pages.dev" target="_blank"><button type="button" class="secondary">🌐 Portfolio</button></a>
         <button type="button" class="secondary" id="signOutBtn" style="display:none" onclick="signOut()">🚪 Sign Out</button>
       </div>
       <p style="font-size:13px;color:var(--muted)">
@@ -158,10 +202,40 @@
 
     <!-- Feed Section -->
     <div class="card tab-panel" id="tab-feed" style="display:none">
-      <p id="welcomeBanner" style="color:#86efac;font-weight:600"></p>
+      <p id="welcomeBanner" style="color:#86efac;font-weight:600;margin-bottom:4px"></p>
+      <div class="stats-strip" id="myStats"></div>
       <textarea id="postInput" rows="3" placeholder="Yaada kee addunyaa fi hawaaf qoodi..."></textarea>
       <button type="button" class="full" onclick="publishPost()">📡 Maxxansi (Broadcast)</button>
       <div id="postsList"></div>
+    </div>
+
+    <!-- Friends & Follow Section -->
+    <div class="card tab-panel" id="tab-people" style="display:none">
+      <h3>👥 Friends & Follow Network</h3>
+      <p style="color:var(--muted);font-size:13px">
+        Namoota networkii keessa jiran hordofi (Follow) ykn gaaffii michummaa (Add Friend — hanga 1,000) ergi.
+      </p>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <input type="text" id="quickAddUser" placeholder="Username galchi (fkn: oromo)..." style="margin:0;flex:1;min-width:180px" />
+        <button type="button" class="sm" onclick="quickFollow()">➕ Follow</button>
+        <button type="button" class="sm success" onclick="quickAddFriend()">🤝 Add Friend</button>
+      </div>
+
+      <div id="friendRequestsBox"></div>
+      <h4 style="color:var(--accent);margin-top:14px">Michoota Keessan (Friends)</h4>
+      <div id="myFriendsList"></div>
+      <h4 style="color:var(--accent);margin-top:14px">Miseensota Networkii (All Users)</h4>
+      <div id="allUsersList"></div>
+    </div>
+
+    <!-- Notifications Section -->
+    <div class="card tab-panel" id="tab-notifs" style="display:none">
+      <div class="user-row">
+        <h3 style="margin:0">🔔 Notifications</h3>
+        <button type="button" class="sm secondary" onclick="markAllRead()">✓ Hundaa Dubbifame Jedhi</button>
+      </div>
+      <div id="notifsList"></div>
     </div>
 
     <!-- Chat Section -->
@@ -186,7 +260,12 @@
     const socket = typeof io !== 'undefined' ? io() : null;
     let currentUser = '';
     try { currentUser = localStorage.getItem('ourface_user') || ''; } catch (err) {}
-    let appState = { posts: [], chats: [], profiles: {} };
+    let appState = { posts: [], chats: [], profiles: {}, notifications: {} };
+    let activeTabName = 'feed';
+
+    function cleanHandle(val) {
+      return String(val || '').trim().replace(/^@+/, '');
+    }
 
     function esc(str) {
       return String(str || '').replace(/[&<>"']/g, function(c) {
@@ -203,23 +282,23 @@
 
     function submitSignup() {
       const name = document.getElementById('fullName').value.trim();
-      const user = document.getElementById('username').value.trim();
+      const user = cleanHandle(document.getElementById('username').value);
       if (!name && !user) {
         alert('Maaloo maqaa ykn username galchi!');
         return;
       }
-      currentUser = (user || name).replace(/^@+/, '');
+      currentUser = user || cleanHandle(name);
       try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
       enterApp();
     }
 
     function submitSignin() {
-      const user = document.getElementById('loginUser').value.trim();
+      const user = cleanHandle(document.getElementById('loginUser').value);
       if (!user) {
         alert('Maaloo username ykn email galchi!');
         return;
       }
-      currentUser = user.replace(/^@+/, '');
+      currentUser = user;
       try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
       enterApp();
     }
@@ -228,8 +307,9 @@
       document.getElementById('authSection').style.display = 'none';
       document.getElementById('signOutBtn').style.display = 'inline-block';
       document.getElementById('welcomeBanner').innerText = 'Akkam, @' + currentUser + ' — Connected to Global & Orbital Mesh!';
-      showTab('feed');
+      showTab(activeTabName || 'feed');
       if (socket) socket.emit('join', currentUser);
+      renderAll();
     }
 
     function signOut() {
@@ -241,9 +321,65 @@
     }
 
     function showTab(name) {
+      activeTabName = name;
       document.querySelectorAll('.tab-panel').forEach(function(el) { el.style.display = 'none'; });
       const target = document.getElementById('tab-' + name);
       if (target) target.style.display = 'block';
+      ['feed', 'people', 'notifs', 'chat', 'about'].forEach(function(t) {
+        const btn = document.getElementById('nav-' + t);
+        if (btn) btn.className = (t === name) ? '' : 'secondary';
+      });
+    }
+
+    function toggleFollow(targetUser) {
+      const t = cleanHandle(targetUser);
+      if (!currentUser || !t || currentUser === t) return;
+      if (socket) socket.emit('toggle_follow', { actor: currentUser, target: t });
+    }
+
+    function sendFriendRequest(targetUser) {
+      const t = cleanHandle(targetUser);
+      if (!currentUser || !t || currentUser === t) return;
+      if (socket) socket.emit('send_friend_request', { actor: currentUser, target: t });
+    }
+
+    function acceptFriend(requester) {
+      const r = cleanHandle(requester);
+      if (!currentUser || !r) return;
+      if (socket) socket.emit('accept_friend', { actor: currentUser, requester: r });
+    }
+
+    function declineFriend(requester) {
+      const r = cleanHandle(requester);
+      if (!currentUser || !r) return;
+      if (socket) socket.emit('decline_friend', { actor: currentUser, requester: r });
+    }
+
+    function removeFriend(targetUser) {
+      const t = cleanHandle(targetUser);
+      if (!currentUser || !t) return;
+      if (socket) socket.emit('remove_friend', { actor: currentUser, target: t });
+    }
+
+    function quickFollow() {
+      const inp = document.getElementById('quickAddUser');
+      const t = cleanHandle(inp.value);
+      if (!t) return;
+      toggleFollow(t);
+      inp.value = '';
+    }
+
+    function quickAddFriend() {
+      const inp = document.getElementById('quickAddUser');
+      const t = cleanHandle(inp.value);
+      if (!t) return;
+      sendFriendRequest(t);
+      inp.value = '';
+    }
+
+    function markAllRead() {
+      if (!currentUser) return;
+      if (socket) socket.emit('mark_notifs_read', currentUser);
     }
 
     function publishPost() {
@@ -258,12 +394,7 @@
         likes: 0,
         comments: []
       };
-      if (socket) {
-        socket.emit('post', item);
-      } else {
-        appState.posts.push(item);
-        renderAll();
-      }
+      if (socket) socket.emit('post', item);
       input.value = '';
     }
 
@@ -287,42 +418,161 @@
         text: text,
         time: new Date().toLocaleTimeString()
       };
-      if (socket) {
-        socket.emit('chat', msg);
-      } else {
-        appState.chats.push(msg);
-        renderAll();
-      }
+      if (socket) socket.emit('chat', msg);
       input.value = '';
     }
 
     function renderAll() {
-      const postsList = document.getElementById('postsList');
-      postsList.innerHTML = appState.posts.slice().reverse().map(function(p) {
-        const cmts = (p.comments || []).map(function(c) {
-          return '<div class="cmt-item"><strong>@' + esc(c.author) + ':</strong> ' + esc(c.text) + '</div>';
-        }).join('');
-        return '<div class="post-card">' +
-          '<strong>@' + esc(p.author) + '</strong> <small style="color:#94a3b8">(' + esc(p.time) + ')</small>' +
-          '<p>' + esc(p.content) + '</p>' +
-          '<button type="button" class="secondary" onclick="likePost(' + p.id + ')">❤️ Like (' + (p.likes || 0) + ')</button>' +
-          cmts +
-          '<div style="display:flex;gap:8px;margin-top:8px">' +
-            '<input id="cmt-' + p.id + '" placeholder="Comment barreessi..." style="margin:0" />' +
-            '<button type="button" onclick="sendComment(' + p.id + ')">Ergi</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+      const profiles = appState.profiles || {};
+      const myProfile = profiles[currentUser] || { followers: [], following: [], friends: [], friendRequests: [] };
+      const followers = myProfile.followers || [];
+      const following = myProfile.following || [];
+      const friends = myProfile.friends || [];
+      const requests = myProfile.friendRequests || [];
+      const myNotifs = (appState.notifications && appState.notifications[currentUser]) || [];
 
+      const unreadCount = myNotifs.filter(function(n) { return !n.read; }).length;
+      const badge = document.getElementById('notifBadge');
+      if (badge) {
+        if (unreadCount > 0) {
+          badge.style.display = 'inline-block';
+          badge.innerText = String(unreadCount);
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      const statsEl = document.getElementById('myStats');
+      if (statsEl) {
+        statsEl.innerHTML =
+          '<div class="stat-box">👥 Friends: <strong>' + friends.length + '</strong> / 1,000</div>' +
+          '<div class="stat-box">➕ Following: <strong>' + following.length + '</strong></div>' +
+          '<div class="stat-box">∞ Followers: <strong>' + followers.length + '</strong></div>' +
+          '<div class="stat-box">📩 Requests: <strong>' + requests.length + '</strong></div>';
+      }
+
+      // Friend requests
+      const reqBox = document.getElementById('friendRequestsBox');
+      if (reqBox) {
+        if (requests.length > 0) {
+          reqBox.innerHTML = '<h4 style="color:#fbbf24">📩 Gaaffii Michummaa Dhufan (' + requests.length + ')</h4>' +
+            requests.map(function(r) {
+              return '<div class="user-card user-row">' +
+                '<div><strong>@' + esc(r) + '</strong> <span style="color:var(--muted);font-size:12px">michuu ta'uu barbaada</span></div>' +
+                '<div style="display:flex;gap:6px">' +
+                  '<button type="button" class="sm success" onclick="acceptFriend(\'' + esc(r) + '\')">✓ Fudhadhu</button>' +
+                  '<button type="button" class="sm secondary" onclick="declineFriend(\'' + esc(r) + '\')">✕ Didi</button>' +
+                '</div>' +
+              '</div>';
+            }).join('');
+        } else {
+          reqBox.innerHTML = '';
+        }
+      }
+
+      // My Friends
+      const friendsEl = document.getElementById('myFriendsList');
+      if (friendsEl) {
+        friendsEl.innerHTML = friends.length ? friends.map(function(f) {
+          return '<div class="user-card user-row">' +
+            '<div><strong>@' + esc(f) + '</strong> <span class="badge">Friend</span></div>' +
+            '<button type="button" class="sm secondary" onclick="removeFriend(\'' + esc(f) + '\')">Remove</button>' +
+          '</div>';
+        }).join('') : '<p style="color:var(--muted);font-size:13px">Hanga ammaa michoonni hin jiran. Nama tokko "Add Friend" godhi.</p>';
+      }
+
+      // All users
+      const allUsersEl = document.getElementById('allUsersList');
+      if (allUsersEl) {
+        const userKeys = Object.keys(profiles).filter(function(u) { return u !== currentUser; });
+        allUsersEl.innerHTML = userKeys.length ? userKeys.map(function(u) {
+          const isFollowing = following.includes(u);
+          const isFriend = friends.includes(u);
+          const targetReqs = (profiles[u] && profiles[u].friendRequests) || [];
+          const reqSent = targetReqs.includes(currentUser);
+
+          let friendBtn = '';
+          if (isFriend) {
+            friendBtn = '<button type="button" class="sm secondary" disabled>✓ Michuu</button>';
+          } else if (reqSent) {
+            friendBtn = '<button type="button" class="sm warn" disabled>⏳ Ergameera</button>';
+          } else {
+            friendBtn = '<button type="button" class="sm success" onclick="sendFriendRequest(\'' + esc(u) + '\')">🤝 Add Friend</button>';
+          }
+
+          return '<div class="user-card user-row">' +
+            '<div><strong>@' + esc(u) + '</strong></div>' +
+            '<div style="display:flex;gap:6px">' +
+              '<button type="button" class="sm ' + (isFollowing ? 'secondary' : '') + '" onclick="toggleFollow(\'' + esc(u) + '\')">' +
+                (isFollowing ? '✓ Following' : '➕ Follow') +
+              '</button>' +
+              friendBtn +
+            '</div>' +
+          '</div>';
+        }).join('') : '<p style="color:var(--muted);font-size:13px">Namoonni biroo yeroo seenan asitti mul'atu.</p>';
+      }
+
+      // Notifications
+      const notifsEl = document.getElementById('notifsList');
+      if (notifsEl) {
+        notifsEl.innerHTML = myNotifs.length ? myNotifs.map(function(n) {
+          return '<div class="notif-card" style="border-color:' + (n.read ? '#1e293b' : '#38bdf8') + '">' +
+            '<div>' + (n.read ? '' : '🔵 ') + '<strong>' + esc(n.text) + '</strong></div>' +
+            '<small style="color:var(--muted)">' + esc(n.time) + '</small>' +
+          '</div>';
+        }).join('') : '<p style="color:var(--muted);font-size:13px">Notifications haaraa hin jiru.</p>';
+      }
+
+      // Posts
+      const postsList = document.getElementById('postsList');
+      if (postsList) {
+        postsList.innerHTML = (appState.posts || []).slice().reverse().map(function(p) {
+          const isOther = p.author && p.author !== currentUser;
+          const isFollowing = following.includes(p.author);
+          const isFriend = friends.includes(p.author);
+          const actionButtons = isOther ? (
+            '<div style="display:inline-flex;gap:6px;margin-left:8px">' +
+              '<button type="button" class="sm ' + (isFollowing ? 'secondary' : '') + '" onclick="toggleFollow(\'' + esc(p.author) + '\')">' +
+                (isFollowing ? '✓ Following' : '+ Follow') +
+              '</button>' +
+              (isFriend
+                ? '<span class="badge">Friend</span>'
+                : '<button type="button" class="sm success" onclick="sendFriendRequest(\'' + esc(p.author) + '\')">+ Friend</button>') +
+            '</div>'
+          ) : '';
+
+          const cmts = (p.comments || []).map(function(c) {
+            return '<div class="cmt-item"><strong>@' + esc(c.author) + ':</strong> ' + esc(c.text) + '</div>';
+          }).join('');
+
+          return '<div class="post-card">' +
+            '<div class="user-row">' +
+              '<div><strong>@' + esc(p.author) + '</strong> <small style="color:#94a3b8">(' + esc(p.time) + ')</small></div>' +
+              actionButtons +
+            '</div>' +
+            '<p>' + esc(p.content) + '</p>' +
+            '<button type="button" class="sm secondary" onclick="likePost(' + p.id + ')">❤️ Like (' + (p.likes || 0) + ')</button>' +
+            cmts +
+            '<div style="display:flex;gap:8px;margin-top:8px">' +
+              '<input id="cmt-' + p.id + '" placeholder="Comment barreessi..." style="margin:0" />' +
+              '<button type="button" class="sm" onclick="sendComment(' + p.id + ')">Ergi</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // Chat
       const chatList = document.getElementById('chatList');
-      chatList.innerHTML = appState.chats.map(function(m) {
-        return '<div class="msg-card"><strong>@' + esc(m.sender) + ':</strong> ' + esc(m.text) + ' <small style="color:#94a3b8">(' + esc(m.time) + ')</small></div>';
-      }).join('');
+      if (chatList) {
+        chatList.innerHTML = (appState.chats || []).map(function(m) {
+          return '<div class="msg-card"><strong>@' + esc(m.sender) + ':</strong> ' + esc(m.text) + ' <small style="color:#94a3b8">(' + esc(m.time) + ')</small></div>';
+        }).join('');
+      }
     }
 
     if (socket) {
       socket.on('state', function(data) {
-        appState = data || { posts: [], chats: [], profiles: {} };
+        appState = data || { posts: [], chats: [], profiles: {}, notifications: {} };
         renderAll();
       });
     }
