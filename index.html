@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Our Face — Global & Orbital Social Network</title>
   <meta name="theme-color" content="#38bdf8" />
-  <link rel="manifest" href="./manifest.json" />
   <style>
     :root {
       --bg: #070d1d;
-      --card: rgba(17, 24, 39, 0.95);
+      --card: rgba(17, 24, 39, 0.96);
       --accent: #38bdf8;
       --accent2: #22c55e;
       --warn: #f59e0b;
@@ -38,19 +37,24 @@
     h1, h2, h3 { margin-top: 0; color: var(--accent); }
     a { color: var(--accent); text-decoration: none; }
     .nav-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-    button {
+    button, .btn-link {
+      display: inline-block;
       background: var(--accent);
       color: #04101c;
       border: none;
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 10px;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 15px;
       cursor: pointer;
+      text-align: center;
       touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(56, 189, 248, 0.35);
+      position: relative;
+      z-index: 5;
     }
     button.sm { padding: 7px 11px; font-size: 13px; }
-    button.full { width: 100%; }
+    button.full, .btn-link.full { width: 100%; display: block; }
     button.secondary {
       background: #1e293b;
       color: var(--text);
@@ -66,13 +70,15 @@
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px 12px;
+      padding: 11px 12px;
       margin: 6px 0 12px;
       border-radius: 10px;
       border: 1px solid #334155;
       background: #0f172a;
       color: var(--text);
       font-size: 15px;
+      position: relative;
+      z-index: 2;
     }
     label { font-size: 14px; color: var(--muted); font-weight: 600; display: block; }
     .badge {
@@ -128,12 +134,6 @@
       border: 1px solid var(--border);
       padding: 6px 10px;
       border-radius: 8px;
-    }
-    .status-msg {
-      color: #fbbf24;
-      font-size: 13px;
-      margin-top: 8px;
-      min-height: 18px;
     }
   </style>
 </head>
@@ -195,8 +195,7 @@
         <label>Password</label>
         <input type="password" id="password" placeholder="Create strong password" />
 
-        <button type="button" id="btnSignupSubmit" class="full" onclick="submitSignup()">🚀 Create Account & Connect Globally</button>
-        <div id="authStatus" class="status-msg"></div>
+        <a href="#feed" id="linkSignupEnter" class="btn-link full" onclick="submitSignup(); return false;">🚀 Create Account & Connect Globally</a>
       </div>
 
       <div id="signinBox" style="display:none">
@@ -204,8 +203,7 @@
         <input type="text" id="loginUser" placeholder="nesrumichael" />
         <label>Password</label>
         <input type="password" id="loginPass" placeholder="Password" />
-        <button type="button" id="btnSigninSubmit" class="full" onclick="submitSignin()">🔓 Sign In</button>
-        <div id="signinStatus" class="status-msg"></div>
+        <a href="#feed" id="linkSigninEnter" class="btn-link full" onclick="submitSignin(); return false;">🔓 Sign In</a>
       </div>
     </div>
 
@@ -266,7 +264,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    let socket = null;
+    var socket = null;
     try {
       if (typeof io === 'function') {
         socket = io({ reconnection: true, timeout: 5000 });
@@ -275,10 +273,10 @@
       socket = null;
     }
 
-    let currentUser = '';
+    var currentUser = '';
     try { currentUser = localStorage.getItem('ourface_user') || ''; } catch (err) {}
-    let appState = { posts: [], chats: [], profiles: {}, notifications: {} };
-    let activeTabName = 'feed';
+    var appState = { posts: [], chats: [], profiles: {}, notifications: {} };
+    var activeTabName = 'feed';
 
     function cleanHandle(val) {
       return String(val || '').trim().replace(/^@+/, '');
@@ -290,49 +288,39 @@
       });
     }
 
-    function setStatus(id, msg) {
-      const el = document.getElementById(id);
-      if (el) el.innerText = msg || '';
-    }
-
     function toggleAuth(mode) {
       document.getElementById('signupBox').style.display = mode === 'signup' ? 'block' : 'none';
       document.getElementById('signinBox').style.display = mode === 'signin' ? 'block' : 'none';
       document.getElementById('btnShowSignup').className = mode === 'signup' ? '' : 'secondary';
       document.getElementById('btnShowSignin').className = mode === 'signin' ? '' : 'secondary';
-      setStatus('authStatus', '');
-      setStatus('signinStatus', '');
     }
 
     function submitSignup() {
-      const nameEl = document.getElementById('fullName');
-      const userEl = document.getElementById('username');
-      const emailEl = document.getElementById('email');
-      const name = (nameEl && nameEl.value ? nameEl.value : '').trim();
-      const user = cleanHandle(userEl && userEl.value ? userEl.value : '');
-      const emailPrefix = cleanHandle((emailEl && emailEl.value ? emailEl.value : '').split('@')[0]);
-
-      const chosen = user || cleanHandle(name) || emailPrefix || 'nesrumichael';
-      currentUser = chosen;
+      var nameEl = document.getElementById('fullName');
+      var userEl = document.getElementById('username');
+      var emailEl = document.getElementById('email');
+      var name = (nameEl && nameEl.value ? nameEl.value : '').trim();
+      var user = cleanHandle(userEl && userEl.value ? userEl.value : '');
+      var emailPrefix = cleanHandle((emailEl && emailEl.value ? emailEl.value : '').split('@')[0]);
+      currentUser = user || cleanHandle(name) || emailPrefix || 'nesrumichael';
       try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
-      setStatus('authStatus', 'Seenaa jira (@' + currentUser + ')...');
       enterApp();
+      return false;
     }
 
     function submitSignin() {
-      const loginEl = document.getElementById('loginUser');
-      const raw = (loginEl && loginEl.value ? loginEl.value : '').trim();
-      const chosen = cleanHandle(raw.split('@')[0]) || 'nesrumichael';
-      currentUser = chosen;
+      var loginEl = document.getElementById('loginUser');
+      var raw = (loginEl && loginEl.value ? loginEl.value : '').trim();
+      currentUser = cleanHandle(raw.split('@')[0]) || 'nesrumichael';
       try { localStorage.setItem('ourface_user', currentUser); } catch (err) {}
-      setStatus('signinStatus', 'Seenaa jira (@' + currentUser + ')...');
       enterApp();
+      return false;
     }
 
     function enterApp() {
-      const authSec = document.getElementById('authSection');
-      const signOutBtn = document.getElementById('signOutBtn');
-      const banner = document.getElementById('welcomeBanner');
+      var authSec = document.getElementById('authSection');
+      var signOutBtn = document.getElementById('signOutBtn');
+      var banner = document.getElementById('welcomeBanner');
 
       if (authSec) authSec.style.display = 'none';
       if (signOutBtn) signOutBtn.style.display = 'inline-block';
@@ -361,8 +349,6 @@
     function signOut() {
       try { localStorage.removeItem('ourface_user'); } catch (err) {}
       currentUser = '';
-      setStatus('authStatus', '');
-      setStatus('signinStatus', '');
       document.getElementById('authSection').style.display = 'block';
       document.getElementById('signOutBtn').style.display = 'none';
       document.querySelectorAll('.tab-panel').forEach(function(el) { el.style.display = 'none'; });
@@ -371,16 +357,16 @@
     function showTab(name) {
       activeTabName = name;
       document.querySelectorAll('.tab-panel').forEach(function(el) { el.style.display = 'none'; });
-      const target = document.getElementById('tab-' + name);
+      var target = document.getElementById('tab-' + name);
       if (target) target.style.display = 'block';
       ['feed', 'people', 'notifs', 'chat', 'about'].forEach(function(t) {
-        const btn = document.getElementById('nav-' + t);
+        var btn = document.getElementById('nav-' + t);
         if (btn) btn.className = (t === name) ? '' : 'secondary';
       });
     }
 
     function toggleFollow(targetUser) {
-      const t = cleanHandle(targetUser);
+      var t = cleanHandle(targetUser);
       if (!currentUser || !t || currentUser === t) return;
       try {
         if (socket) socket.emit('toggle_follow', { actor: currentUser, target: t });
@@ -388,7 +374,7 @@
     }
 
     function sendFriendRequest(targetUser) {
-      const t = cleanHandle(targetUser);
+      var t = cleanHandle(targetUser);
       if (!currentUser || !t || currentUser === t) return;
       try {
         if (socket) socket.emit('send_friend_request', { actor: currentUser, target: t });
@@ -396,7 +382,7 @@
     }
 
     function acceptFriend(requester) {
-      const r = cleanHandle(requester);
+      var r = cleanHandle(requester);
       if (!currentUser || !r) return;
       try {
         if (socket) socket.emit('accept_friend', { actor: currentUser, requester: r });
@@ -404,7 +390,7 @@
     }
 
     function declineFriend(requester) {
-      const r = cleanHandle(requester);
+      var r = cleanHandle(requester);
       if (!currentUser || !r) return;
       try {
         if (socket) socket.emit('decline_friend', { actor: currentUser, requester: r });
@@ -412,7 +398,7 @@
     }
 
     function removeFriend(targetUser) {
-      const t = cleanHandle(targetUser);
+      var t = cleanHandle(targetUser);
       if (!currentUser || !t) return;
       try {
         if (socket) socket.emit('remove_friend', { actor: currentUser, target: t });
@@ -420,16 +406,16 @@
     }
 
     function quickFollow() {
-      const inp = document.getElementById('quickAddUser');
-      const t = cleanHandle(inp.value);
+      var inp = document.getElementById('quickAddUser');
+      var t = cleanHandle(inp.value);
       if (!t) return;
       toggleFollow(t);
       inp.value = '';
     }
 
     function quickAddFriend() {
-      const inp = document.getElementById('quickAddUser');
-      const t = cleanHandle(inp.value);
+      var inp = document.getElementById('quickAddUser');
+      var t = cleanHandle(inp.value);
       if (!t) return;
       sendFriendRequest(t);
       inp.value = '';
@@ -443,10 +429,10 @@
     }
 
     function publishPost() {
-      const input = document.getElementById('postInput');
-      const content = input.value.trim();
+      var input = document.getElementById('postInput');
+      var content = input.value.trim();
       if (!content || !currentUser) return;
-      const item = {
+      var item = {
         id: Date.now(),
         author: currentUser,
         content: content,
@@ -475,7 +461,7 @@
     }
 
     function sendComment(id) {
-      const inp = document.getElementById('cmt-' + id);
+      var inp = document.getElementById('cmt-' + id);
       if (!inp || !inp.value.trim() || !currentUser) return;
       try {
         if (socket) socket.emit('comment', { id: id, author: currentUser, text: inp.value.trim() });
@@ -484,10 +470,10 @@
     }
 
     function sendChat() {
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
+      var input = document.getElementById('chatInput');
+      var text = input.value.trim();
       if (!text || !currentUser) return;
-      const msg = {
+      var msg = {
         sender: currentUser,
         text: text,
         time: new Date().toLocaleTimeString()
@@ -506,35 +492,31 @@
       input.value = '';
     }
 
-    // Backup click/pointer listener on submit buttons so touch always triggers
-    document.addEventListener('DOMContentLoaded', function() {
-      const sBtn = document.getElementById('btnSignupSubmit');
-      const lBtn = document.getElementById('btnSigninSubmit');
-      if (sBtn) {
-        sBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          submitSignup();
-        });
+    // Bind direct touch/click handlers to links so mobile browsers always respond
+    (function bindAuthLinks() {
+      var sLink = document.getElementById('linkSignupEnter');
+      var lLink = document.getElementById('linkSigninEnter');
+      if (sLink) {
+        sLink.addEventListener('touchend', function(e) { e.preventDefault(); submitSignup(); }, { passive: false });
+        sLink.addEventListener('click', function(e) { e.preventDefault(); submitSignup(); });
       }
-      if (lBtn) {
-        lBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          submitSignin();
-        });
+      if (lLink) {
+        lLink.addEventListener('touchend', function(e) { e.preventDefault(); submitSignin(); }, { passive: false });
+        lLink.addEventListener('click', function(e) { e.preventDefault(); submitSignin(); });
       }
-    });
+    })();
 
     function renderAll() {
-      const profiles = appState.profiles || {};
-      const myProfile = profiles[currentUser] || { followers: [], following: [], friends: [], friendRequests: [] };
-      const followers = myProfile.followers || [];
-      const following = myProfile.following || [];
-      const friends = myProfile.friends || [];
-      const requests = myProfile.friendRequests || [];
-      const myNotifs = (appState.notifications && appState.notifications[currentUser]) || [];
+      var profiles = appState.profiles || {};
+      var myProfile = profiles[currentUser] || { followers: [], following: [], friends: [], friendRequests: [] };
+      var followers = myProfile.followers || [];
+      var following = myProfile.following || [];
+      var friends = myProfile.friends || [];
+      var requests = myProfile.friendRequests || [];
+      var myNotifs = (appState.notifications && appState.notifications[currentUser]) || [];
 
-      const unreadCount = myNotifs.filter(function(n) { return !n.read; }).length;
-      const badge = document.getElementById('notifBadge');
+      var unreadCount = myNotifs.filter(function(n) { return !n.read; }).length;
+      var badge = document.getElementById('notifBadge');
       if (badge) {
         if (unreadCount > 0) {
           badge.style.display = 'inline-block';
@@ -544,7 +526,7 @@
         }
       }
 
-      const statsEl = document.getElementById('myStats');
+      var statsEl = document.getElementById('myStats');
       if (statsEl) {
         statsEl.innerHTML =
           '<div class="stat-box">👥 Friends: <strong>' + friends.length + '</strong> / 1,000</div>' +
@@ -553,7 +535,7 @@
           '<div class="stat-box">📩 Requests: <strong>' + requests.length + '</strong></div>';
       }
 
-      const reqBox = document.getElementById('friendRequestsBox');
+      var reqBox = document.getElementById('friendRequestsBox');
       if (reqBox) {
         if (requests.length > 0) {
           reqBox.innerHTML = '<h4 style="color:#fbbf24">📩 Gaaffii Michummaa Dhufan (' + requests.length + ')</h4>' +
@@ -571,7 +553,7 @@
         }
       }
 
-      const friendsEl = document.getElementById('myFriendsList');
+      var friendsEl = document.getElementById('myFriendsList');
       if (friendsEl) {
         friendsEl.innerHTML = friends.length ? friends.map(function(f) {
           return '<div class="user-card user-row">' +
@@ -581,16 +563,16 @@
         }).join('') : '<p style="color:var(--muted);font-size:13px">Hanga ammaa michoonni hin jiran. Nama tokko "Add Friend" godhi.</p>';
       }
 
-      const allUsersEl = document.getElementById('allUsersList');
+      var allUsersEl = document.getElementById('allUsersList');
       if (allUsersEl) {
-        const userKeys = Object.keys(profiles).filter(function(u) { return u !== currentUser; });
+        var userKeys = Object.keys(profiles).filter(function(u) { return u !== currentUser; });
         allUsersEl.innerHTML = userKeys.length ? userKeys.map(function(u) {
-          const isFollowing = following.includes(u);
-          const isFriend = friends.includes(u);
-          const targetReqs = (profiles[u] && profiles[u].friendRequests) || [];
-          const reqSent = targetReqs.includes(currentUser);
+          var isFollowing = following.includes(u);
+          var isFriend = friends.includes(u);
+          var targetReqs = (profiles[u] && profiles[u].friendRequests) || [];
+          var reqSent = targetReqs.includes(currentUser);
 
-          let friendBtn = '';
+          var friendBtn = '';
           if (isFriend) {
             friendBtn = '<button type="button" class="sm secondary" disabled>✓ Michuu</button>';
           } else if (reqSent) {
@@ -611,7 +593,7 @@
         }).join('') : '<p style="color:var(--muted);font-size:13px">Namoonni biroo yeroo seenan asitti mul'atu.</p>';
       }
 
-      const notifsEl = document.getElementById('notifsList');
+      var notifsEl = document.getElementById('notifsList');
       if (notifsEl) {
         notifsEl.innerHTML = myNotifs.length ? myNotifs.map(function(n) {
           return '<div class="notif-card" style="border-color:' + (n.read ? '#1e293b' : '#38bdf8') + '">' +
@@ -621,13 +603,13 @@
         }).join('') : '<p style="color:var(--muted);font-size:13px">Notifications haaraa hin jiru.</p>';
       }
 
-      const postsList = document.getElementById('postsList');
+      var postsList = document.getElementById('postsList');
       if (postsList) {
         postsList.innerHTML = (appState.posts || []).slice().reverse().map(function(p) {
-          const isOther = p.author && p.author !== currentUser;
-          const isFollowing = following.includes(p.author);
-          const isFriend = friends.includes(p.author);
-          const actionButtons = isOther ? (
+          var isOther = p.author && p.author !== currentUser;
+          var isFollowing = following.includes(p.author);
+          var isFriend = friends.includes(p.author);
+          var actionButtons = isOther ? (
             '<div style="display:inline-flex;gap:6px;margin-left:8px">' +
               '<button type="button" class="sm ' + (isFollowing ? 'secondary' : '') + '" onclick="toggleFollow(\'' + esc(p.author) + '\')">' +
                 (isFollowing ? '✓ Following' : '+ Follow') +
@@ -638,7 +620,7 @@
             '</div>'
           ) : '';
 
-          const cmts = (p.comments || []).map(function(c) {
+          var cmts = (p.comments || []).map(function(c) {
             return '<div class="cmt-item"><strong>@' + esc(c.author) + ':</strong> ' + esc(c.text) + '</div>';
           }).join('');
 
@@ -658,7 +640,7 @@
         }).join('');
       }
 
-      const chatList = document.getElementById('chatList');
+      var chatList = document.getElementById('chatList');
       if (chatList) {
         chatList.innerHTML = (appState.chats || []).map(function(m) {
           return '<div class="msg-card"><strong>@' + esc(m.sender) + ':</strong> ' + esc(m.text) + ' <small style="color:#94a3b8">(' + esc(m.time) + ')</small></div>';
