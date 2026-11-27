@@ -1,0 +1,16 @@
+{
+  "name": "Our Face - Global & Orbital Social Network",
+  "short_name": "Our Face",
+  "description": "Global real-time social media & satellite-ready communication network built by Nesru Michael.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#38bdf8",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/921/921490.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

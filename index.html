@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Face | Global &amp; Orbital Real-Time Social Network — Nesru Michael</title>
+  <meta name="description" content="Our Face - Modern Global & Satellite-Connected Social Media Platform developed by Nesru Michael (3rd Year EDPM Student)." />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="cosmic-grid"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <a href="#" class="brand" onclick="showMainView()">
+      <div class="brand-orb">OF</div>
+      <div class="brand-title">
+        <h1>Our Face</h1>
+        <span>🛰️ Earth &amp; Space Mesh • Unlimited Cloud</span>
+      </div>
+    </a>
+
+    <nav class="nav-links">
+      <button class="nav-btn active" onclick="showMainView()">🏠 Home Feed</button>
+      <button class="nav-btn" onclick="openGovernance('about')">ℹ️ About</button>
+      <button class="nav-btn" onclick="openGovernance('transparency')">🔍 Terms of Transparency</button>
+      <button class="nav-btn" onclick="openGovernance('privacy')">🛡️ Privacy &amp; Policy</button>
+      <button class="nav-btn" onclick="openGovernance('support')">🎧 Support &amp; Contact</button>
+      <a class="nav-btn" href="https://nesrumichaelet.pages.dev" target="_blank" rel="noopener">🌐 Developer Portfolio</a>
+      <select id="globalLangSelect" class="lang-select" aria-label="Select World Language"></select>
+      <button id="logoutBtn" class="nav-btn hidden" onclick="logoutUser()">🚪 Sign Out</button>
+    </nav>
+  </header>
+
+  <!-- Landing / Authentication Hero (Shown before Sign In / Sign Up) -->
+  <section id="landingSection" class="hero-section">
+    <div class="hero-banner">
+      <div class="hero-left">
+        <div class="telemetry-pill">
+          <span class="pulse-dot"></span>
+          <span>LEO/GEO SATELLITE &amp; GLOBAL MESH ACTIVE • 195+ COUNTRIES</span>
+        </div>
+        <h2 id="heroTitle">Our Face — Addunyaa fi Hawaa Walitti Hidhu</h2>
+        <p id="heroSub">
+          Waltajjii hawaasaa ammayyaa yeroo qabatamaa (Real-Time) keessatti namoota addunyaa guutuu fi networkii saatalaayitii walqunnamsiisu.
+          Developed by <strong>Nesru Michael</strong> (3rd Year Student, EDPM Program).
+        </p>
+
+        <div class="hero-stats">
+          <div class="stat-box">
+            <strong>∞ Unlimited</strong>
+            <span>Followers &amp; Global Cloud Storage</span>
+          </div>
+          <div class="stat-box">
+            <strong>1,000 Friends</strong>
+            <span>Trusted Close-Circle Connections</span>
+          </div>
+          <div class="stat-box">
+            <strong>🛰️ 24ms Relay</strong>
+            <span>Global &amp; Space DTN Broadcast</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sign Up / Sign In Card -->
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button id="tabSignup" class="auth-tab active" onclick="switchAuthTab('signup')">Create Account (Sign Up)</button>
+          <button id="tabSignin" class="auth-tab" onclick="switchAuthTab('signin')">Sign In</button>
+        </div>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm" onsubmit="handleSignup(event)">
+          <div class="form-group">
+            <label>Full Name / Maqaa Guutuu</label>
+            <input type="text" id="regFullName" class="form-control" placeholder="e.g., Nesru Michael" required />
+          </div>
+          <div class="form-group">
+            <label>Username (@handle)</label>
+            <input type="text" id="regUsername" class="form-control" placeholder="e.g., nesrumichael" required />
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="regEmail" class="form-control" placeholder="you@example.com" required />
+          </div>
+          <div class="form-group">
+            <label>Country &amp; International Code / Biyyaafi Koodii</label>
+            <select id="regCountry" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Preferred World Language / Afaan</label>
+            <select id="regLanguage" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="regPassword" class="form-control" placeholder="Create strong password" required />
+          </div>
+          <button type="submit" class="btn-primary">🚀 Create Account &amp; Connect Globally</button>
+        </form>
+
+        <!-- Sign In Form -->
+        <form id="signinForm" class="hidden" onsubmit="handleSignin(event)">
+          <div class="form-group">
+            <label>Email or Username</label>
+            <input type="text" id="loginIdentifier" class="form-control" placeholder="nesrumichael@gmail.com or username" required />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="Enter password" required />
+          </div>
+          <button type="submit" class="btn-primary">🔐 Sign In to Our Face</button>
+        </form>
+        <p id="authFeedback" style="margin-top:0.75rem;font-size:0.85rem;color:#38bdf8;"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Logged-In Social Workspace -->
+  <main id="workspaceSection" class="workspace hidden">
+    <!-- Left Column: User Profile & Orbital Telemetry -->
+    <aside>
+      <div class="card">
+        <div class="profile-header">
+          <img id="myAvatar" class="avatar-lg" src="" alt="Profile Avatar" />
+          <h3 id="myFullName">User Name</h3>
+          <p id="myHandle" style="color:var(--accent-primary);font-size:0.85rem;">@username</p>
+          <p id="myCountryBadge" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;"></p>
+          <p id="myBio" style="font-size:0.82rem;margin-top:0.5rem;color:#cbd5e1;"></p>
+        </div>
+
+        <div class="badge-row">
+          <div class="badge-item">
+            <strong id="myFriendsCount">0 / 1000</strong>
+            <span id="friendsLimitLabel">Friends (Max 1,000)</span>
+          </div>
+          <div class="badge-item">
+            <strong id="myFollowersCount">0 ∞</strong>
+            <span id="followersLabel">Followers (Unlimited)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Satellite & Space Mesh Telemetry -->
+      <div class="card">
+        <h4 id="satelliteStatus" style="margin-bottom:0.65rem;color:var(--accent-emerald);">🛰️ Global &amp; Space Satellite Mesh</h4>
+        <div id="satelliteList" style="font-size:0.78rem;color:var(--text-muted);"></div>
+      </div>
+    </aside>
+
+    <!-- Center Column: Instant Worldwide Post Composer & Global Stream -->
+    <section>
+      <div class="card composer">
+        <textarea id="postContentInput" placeholder="Yaada kee addunyaa guutuutiif yeruma ammaa qoodi..."></textarea>
+        <div class="composer-footer">
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <select id="postVisibility" class="lang-select">
+              <option value="GLOBAL_WORLDWIDE">🌍 Worldwide Public (Instant)</option>
+              <option value="ORBITAL_BROADCAST">🛰️ Global + Orbital Satellite Relay</option>
+              <option value="FRIENDS_ONLY">👥 Friends Circle (Max 1,000)</option>
+            </select>
+          </div>
+          <button id="publishBtn" class="btn-primary" style="width:auto;" onclick="publishGlobalPost()">
+            Publish Worldwide 🌍
+          </button>
+        </div>
+      </div>
+
+      <div id="globalFeedContainer"></div>
+    </section>
+
+    <!-- Right Column: Global People Directory & Real-Time Private Friend Chat -->
+    <aside>
+      <!-- Real-Time Private Chat -->
+      <div class="card">
+        <h4 id="chatTitle" style="color:var(--accent-primary);">💬 Real-Time Private Friend Chat</h4>
+        <p id="chatWithLabel" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.25rem;">
+          Select any friend or global member below to chat in real time.
+        </p>
+        <div id="chatMessagesBox" class="chat-box"></div>
+        <form onsubmit="sendPrivateChat(event)" style="display:flex;gap:0.4rem;">
+          <input type="text" id="chatInput" class="form-control" placeholder="Write private message..." />
+          <button type="submit" class="btn-primary" style="width:auto;padding:0.6rem 0.9rem;">Send</button>
+        </form>
+      </div>
+
+      <!-- Global People (Follow Unlimited / Add Friend up to 1000) -->
+      <div class="card">
+        <h4 style="margin-bottom:0.65rem;">🌐 Global Community (Follow &amp; Add Friend)</h4>
+        <div id="globalUsersList"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Governance, About, Terms of Transparency, Privacy, Policy & Support Section -->
+  <section id="governanceSection" class="governance-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <h2 style="color:var(--accent-primary);">Our Face — Governance, Transparency &amp; Developer Charter</h2>
+      <button class="btn-primary" style="width:auto;" onclick="showMainView()">← Back to Our Face</button>
+    </div>
+
+    <div class="gov-grid">
+      <div class="gov-card" id="gov-about">
+        <h3>ℹ️ About Our Face &amp; Lead Developer</h3>
+        <p>
+          <strong>Our Face</strong> is a next-generation global and space-ready social communication platform engineered to unify humanity across every country, language, and orbital relay network in real time.
+        </p>
+        <ul style="margin-top:0.75rem;padding-left:1.2rem;color:var(--text-muted);font-size:0.9rem;">
+          <li><strong>Lead Developer &amp; Architect:</strong> Nesru Michael</li>
+          <li><strong>Academic Background:</strong> 3rd Year Student, Educational Planning and Management (EDPM) Program</li>
+          <li><strong>Official Website:</strong> <a href="https://nesrumichaelet.pages.dev" target="_blank" style="color:#38bdf8;">https://nesrumichaelet.pages.dev</a></li>
+          <li><strong>Global Architecture:</strong> Unlimited elastic distributed cloud storage + LEO/GEO Delay-Tolerant Satellite Mesh.</li>
+        </ul>
+      </div>
+
+      <div class="gov-card" id="gov-transparency">
+        <h3>🔍 Terms of Transparency</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;">
+          Our Face operates under radical algorithmic and infrastructural transparency:
+        </p>
+        <ul style="margin-top:0.6rem;padding-left:1.2rem;color:var(--text-muted);font-size:0.88rem;">
+          <li><strong>Zero Hidden Throttling:</strong> Every public post broadcasts chronologically and instantaneously across the worldwide feed.</li>
+          <li><strong>Clear Social Limits:</strong> Followers scale to <strong>Infinity (∞)</strong> with zero artificial caps; mutual Friend circles are structured up to <strong>1,000 trusted friends</strong> to preserve authentic human connection.</li>
+          <li><strong>Open Telemetry:</strong> Every post displays its exact global &amp; orbital relay node status.</li>
+        </ul>
+      </div>
+
+      <div class="gov-card" id="gov-privacy">
+        <h3>🛡️ Privacy &amp; Data Protection Policy</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;">
+          User sovereignty and cryptographic protection are foundational to Our Face:
+        </p>
+        <ul style="margin-top:0.6rem;padding-left:1.2rem;color:var(--text-muted);font-size:0.88rem;">
+          <li><strong>Encrypted Credentials:</strong> Passwords are salted and hashed via industry-standard bcrypt cryptography; sessions use signed JWT tokens.</li>
+          <li><strong>Private Friend Chats:</strong> Direct messages between friends are routed exclusively to intended recipients over secure WebSocket channels.</li>
+          <li><strong>Unlimited Data Ownership:</strong> Users retain full ownership of all posts, media, and profile records stored across our distributed cloud cluster.</li>
+        </ul>
+      </div>
+
+      <div class="gov-card" id="gov-support">
+        <h3>🎧 Support &amp; Direct Developer Contact</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;">
+          Need technical assistance, partnership inquiries, or global network support? Reach the founder and engineering desk directly:
+        </p>
+        <ul style="margin-top:0.75rem;padding-left:1.2rem;color:var(--text-main);font-size:0.9rem;">
+          <li><strong>Developer:</strong> Nesru Michael (3rd Year EDPM Program)</li>
+          <li><strong>Direct Email:</strong> <a href="mailto:nesrumichael@gmail.com" style="color:#38bdf8;">nesrumichael@gmail.com</a></li>
+          <li><strong>Direct Phone / WhatsApp / Telegram:</strong> <a href="tel:+251923502787" style="color:#10b981;">+251923502787</a></li>
+          <li><strong>Developer Portal:</strong> <a href="https://nesrumichaelet.pages.dev" target="_blank" style="color:#38bdf8;">https://nesrumichaelet.pages.dev</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Global Footer -->
+  <footer class="site-footer">
+    <p>
+      <strong>Our Face</strong> — Global &amp; Space-Ready Real-Time Social Network |
+      Developed by <strong>Nesru Michael</strong> (3rd Year EDPM Program)
+    </p>
+    <p style="margin-top:0.4rem;">
+      📧 <a href="mailto:nesrumichael@gmail.com">nesrumichael@gmail.com</a> |
+      📞 <a href="tel:+251923502787">+251923502787</a> |
+      🌐 <a href="https://nesrumichaelet.pages.dev" target="_blank" rel="noopener">https://nesrumichaelet.pages.dev</a>
+    </p>
+    <p style="margin-top:0.5rem;font-size:0.78rem;">
+      <a href="#" onclick="openGovernance('about')">About</a> •
+      <a href="#" onclick="openGovernance('transparency')">Terms of Transparency</a> •
+      <a href="#" onclick="openGovernance('privacy')">Privacy &amp; Policy</a> •
+      <a href="#" onclick="openGovernance('support')">Support &amp; Contact</a>
+    </p>
+  </footer>
+
+  <script src="/js/world-data.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
